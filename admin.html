@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Desert Dance — CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;1,9..40,400&family=Jost:wght@300;400;600;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-dark': '#231f20',
+            'brand-dark-elevated': '#2a2627',
+            'brand-lime': '#d8e723',
+            'brand-lime-hover': '#bcc91b',
+            'brand-lime-dim': 'rgba(216,231,35,0.12)',
+            'brand-white': '#ffffff',
+            'brand-white-muted': 'rgba(255,255,255,0.55)',
+            'brand-white-faint': 'rgba(255,255,255,0.08)',
+          },
+          fontFamily: {
+            'title': ["'Jost'", 'sans-serif'],
+            'italic-display': ["'Cormorant Garamond'", 'serif'],
+            'body': ["'DM Sans'", 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="icon" href="assets/logos/favicon-32.png" type="image/png">
+  <style>
+    body { background: #231f20; color: #fff; }
+    ::selection { background: rgba(216,231,35,0.25); }
+    .stat-card { transition: transform .3s ease, box-shadow .3s ease; }
+    .stat-card:hover { transform: translateY(-3px); }
+    .toast { animation: toastIn .3s ease-out; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    table { border-collapse: separate; border-spacing: 0; }
+    .badge { display: inline-flex; align-items: center; gap: .4rem; }
+    .badge-dot { width: 6px; height: 6px; border-radius: 9999px; }
+  </style>
+</head>
+<body class="font-body antialiased">
+
+  <!-- Auth guard overlay -->
+  <div id="auth-loading" class="fixed inset-0 bg-brand-dark flex items-center justify-center z-[60]">
+    <div class="text-center space-y-4">
+      <div class="w-12 h-12 border-2 border-brand-lime/30 border-t-brand-lime rounded-full animate-spin mx-auto"></div>
+      <p class="text-brand-white-muted/50 text-xs tracking-[0.2em] uppercase">Verificando acceso...</p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl bg-brand-dark/70 border-b border-brand-white-faint">
+    <div class="px-6 md:px-10 py-3.5 flex items-center justify-between max-w-7xl mx-auto">
+      <div class="flex items-center gap-4">
+        <img src="assets/logos/d_mark.svg" alt="" class="h-9 w-auto">
+        <div>
+          <p class="font-title font-black text-brand-white leading-none text-lg tracking-tight">Desert Dance</p>
+          <p class="text-[9px] text-brand-white-muted/40 uppercase tracking-[0.2em]">Panel de Administración</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="hidden md:inline-flex items-center gap-2 text-xs text-brand-white-muted/60 hover:text-brand-lime transition-colors font-medium">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Ver sitio
+        </a>
+        <button id="btn-logout" class="text-xs font-bold uppercase tracking-[0.1em] px-5 py-2 rounded-full border border-brand-white-faint text-brand-white-muted/70 hover:text-brand-lime hover:border-brand-lime/40 transition-all">
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="pt-20 px-6 md:px-10 max-w-7xl mx-auto pb-24">
+
+    <!-- Dashboard stats -->
+    <section id="dashboard" class="mt-6">
+      <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-6">Panel <span class="italic-display italic text-brand-lime font-light">general</span></h2>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Equipos</p>
+          <p id="stat-total" class="font-title text-4xl font-black text-brand-white leading-none">—</p>
+        </div>
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Bailarines</p>
+          <p id="stat-dancers" class="font-title text-4xl font-black text-brand-white leading-none">—</p>
+        </div>
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Pendientes</p>
+          <p id="stat-pending" class="font-title text-4xl font-black text-[#e8ab4a] leading-none">—</p>
+        </div>
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Confirmados</p>
+          <p id="stat-confirmed" class="font-title text-4xl font-black text-brand-lime leading-none">—</p>
+        </div>
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Lista de espera</p>
+          <p id="stat-waitlist" class="font-title text-4xl font-black text-[#7fb3d8] leading-none">—</p>
+        </div>
+      </div>
+
+      <!-- Por ciudad -->
+      <h3 class="text-brand-white-muted/60 text-xs uppercase tracking-[0.2em] font-extrabold mb-4">Equipos por ciudad de origen</h3>
+      <div id="city-bars" class="space-y-3 mb-10"></div>
+    </section>
+
+    <!-- Teams table -->
+    <section id="participants-section">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div>
+          <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Equipos</h2>
+          <p id="count-label" class="text-brand-white-muted/40 text-xs mt-1">Cargando...</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div class="relative">
+            <input id="search-input" type="search" placeholder="Buscar equipo, ciudad, contacto..."
+              class="w-full sm:w-72 bg-brand-dark-elevated/70 border border-brand-white-faint rounded-xl px-4 py-2.5 pl-10 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-white-muted/30" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </div>
+          <select id="filter-city" class="bg-brand-dark-elevated/70 border border-brand-white-faint rounded-xl px-4 py-2.5 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            <option value="">Todas las ciudades</option>
+          </select>
+          <select id="filter-status" class="bg-brand-dark-elevated/70 border border-brand-white-faint rounded-xl px-4 py-2.5 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            <option value="">Todos los estatus</option>
+            <option value="pending">Pendiente</option>
+            <option value="confirmed">Confirmado</option>
+            <option value="rejected">Rechazado</option>
+            <option value="waitlist">Lista de espera</option>
+          </select>
+          <button id="btn-export" class="inline-flex items-center justify-center gap-2 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] px-5 py-2.5 rounded-xl hover:bg-brand-lime-hover transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.3)]">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm min-w-[1000px]">
+            <thead>
+              <tr class="border-b border-brand-white-faint text-left">
+                <th class="px-5 py-4 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Equipo</th>
+                <th class="px-5 py-4 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Contacto</th>
+                <th class="px-5 py-4 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Música</th>
+                <th class="px-5 py-4 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Horario</th>
+                <th class="px-5 py-4 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Estatus</th>
+                <th class="px-5 py-4 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Registro</th>
+                <th class="px-5 py-4 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr><td colspan="7" class="px-5 py-12 text-center text-brand-white-muted/30 text-sm">Cargando equipos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div class="flex items-center justify-between px-5 py-4 border-t border-brand-white-faint flex-wrap gap-3">
+          <p id="page-info" class="text-xs text-brand-white-muted/40">—</p>
+          <div class="flex gap-2">
+            <button id="page-prev" class="px-4 py-2 rounded-lg border border-brand-white-faint text-xs text-brand-white-muted/60 hover:text-brand-lime hover:border-brand-lime/40 disabled:opacity-30 disabled:pointer-events-none transition-colors">‹ Anterior</button>
+            <button id="page-next" class="px-4 py-2 rounded-lg border border-brand-white-faint text-xs text-brand-white-muted/60 hover:text-brand-lime hover:border-brand-lime/40 disabled:opacity-30 disabled:pointer-events-none transition-colors">Siguiente ›</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Edit modal -->
+  <div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal="edit"></div>
+    <div class="relative bg-brand-dark-elevated rounded-3xl border border-brand-white-faint p-7 w-full max-w-lg shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="font-title text-xl font-black text-brand-white">Editar equipo</h3>
+        <button data-close-modal="edit" class="text-brand-white-muted/40 hover:text-brand-white transition-colors" aria-label="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="edit-form" class="space-y-4">
+        <input type="hidden" id="edit-id">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Nombre del equipo</label>
+            <input id="edit-team-name" type="text" required class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Ciudad de origen</label>
+            <input id="edit-city" type="text" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Contacto</label>
+            <input id="edit-contact-name" type="text" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Teléfono</label>
+            <input id="edit-contact-phone" type="tel" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Correo</label>
+          <input id="edit-contact-email" type="email" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Horario de presentación</label>
+            <input id="edit-schedule" type="datetime-local" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Estatus</label>
+            <select id="edit-status" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+              <option value="pending">Pendiente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="rejected">Rechazado</option>
+              <option value="waitlist">Lista de espera</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-2">Notas</label>
+          <textarea id="edit-notes" rows="2" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors resize-none"></textarea>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" data-close-modal="edit" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-sm py-3 rounded-xl hover:text-brand-white transition-colors">Cancelar</button>
+          <button type="submit" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-3 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete modal -->
+  <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal="delete"></div>
+    <div class="relative bg-brand-dark-elevated rounded-3xl border border-brand-white-faint p-7 w-full max-w-sm shadow-[0_0_80px_rgba(0,0,0,0.6)] text-center">
+      <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      </div>
+      <h3 class="font-title text-xl font-black text-brand-white mb-2">¿Eliminar equipo?</h3>
+      <p id="delete-name" class="text-brand-white-muted/50 text-sm mb-6">Esta acción no se puede deshacer.</p>
+      <div class="flex gap-3">
+        <button type="button" data-close-modal="delete" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-sm py-3 rounded-xl hover:text-brand-white transition-colors">Cancelar</button>
+        <button id="btn-confirm-delete" class="flex-1 bg-red-500 text-white font-extrabold text-xs uppercase tracking-[0.12em] py-3 rounded-xl hover:bg-red-600 transition-colors">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-[70] toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

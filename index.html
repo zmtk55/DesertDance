@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Desert Dance — Competencia de Danza y Expresión Corporal en Caborca, Sonora. 17, 18 y 19 de abril · 1-3 de mayo 2026.">
+  <title>Desert Dance — Competencia de Danza 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;1,9..40,400&family=Jost:wght@300;400;600;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-dark': '#231f20',
+            'brand-dark-elevated': '#2a2627',
+            'brand-lime': '#d8e723',
+            'brand-lime-hover': '#bcc91b',
+            'brand-lime-dim': 'rgba(216,231,35,0.12)',
+            'brand-white': '#ffffff',
+            'brand-white-muted': 'rgba(255,255,255,0.55)',
+            'brand-white-faint': 'rgba(255,255,255,0.08)',
+          },
+          fontFamily: {
+            'title': ["'Jost'", 'sans-serif'],
+            'italic-display': ["'Cormorant Garamond'", 'serif'],
+            'body': ["'DM Sans'", 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::selection { background: rgba(216,231,35,0.25); color: #ffffff; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: #231f20; color: #ffffff; }
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { animation: revealUp 1s ease-out both; }
+    .reveal-d1 { animation-delay: 0.08s; }
+    .reveal-d2 { animation-delay: 0.16s; }
+    .reveal-d3 { animation-delay: 0.24s; }
+    .reveal-d4 { animation-delay: 0.32s; }
+  </style>
+  <link rel="icon" href="assets/logos/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png">
+</head>
+<body class="antialiased overflow-x-hidden">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 px-6 md:px-16 py-4 flex items-center justify-between backdrop-blur-xl bg-brand-dark/60 border-b border-brand-white-faint">
+    <div class="flex items-center space-x-3">
+      <a href="#" class="flex items-center">
+        <img src="assets/logos/horizontal_compact.svg" alt="Desert Dance" class="h-9 w-auto">
+      </a>
+    </div>
+    <div class="flex items-center space-x-4">
+      <a href="#fechas" class="text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors hidden md:block">Fechas</a>
+      <a href="#registro" class="px-6 py-2.5 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold uppercase tracking-[0.12em] hover:bg-brand-lime-hover transition-colors duration-300">Registro</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative h-screen w-full overflow-hidden flex items-end">
+    <img
+      src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1920&q=80&auto=format"
+      alt="Danza contemporánea en escenario iluminado — referencia de la competencia"
+      class="absolute inset-0 w-full h-full object-cover opacity-25 scale-[1.01]"
+    >
+    <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/50 to-brand-dark/30"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-brand-dark/60 via-transparent to-brand-dark/40"></div>
+
+    <div class="relative z-10 px-6 md:px-16 pb-24 md:pb-32 max-w-6xl mx-auto w-full">
+      <p class="reveal reveal-d1 text-brand-lime text-[11px] md:text-xs font-extrabold tracking-[0.3em] uppercase mb-6">Competencia · 2026</p>
+      <h1 class="reveal reveal-d2 font-title text-7xl sm:text-9xl md:text-[11rem] leading-[0.78] font-black tracking-tight text-brand-white mb-5">
+        Desert<br><span class="italic-display italic text-brand-lime font-light tracking-normal">Dance</span>
+      </h1>
+      <p class="reveal reveal-d3 text-base md:text-xl text-brand-white-muted/70 max-w-xl leading-relaxed mb-3">
+        Una competencia de danza contemporánea y expresión corporal en pleno desierto de Sonora. Tu estudio compite por equipos. Regístrate antes del cierre de plazas.
+      </p>
+      <p class="reveal reveal-d3 text-xs md:text-sm text-brand-white-muted/40 mb-10">17, 18 y 19 de abril · Caborca, Sonora · Registro abierto</p>
+      <div class="reveal reveal-d4 flex flex-wrap items-center gap-4">
+        <a href="#registro" class="inline-block bg-brand-lime text-brand-dark px-8 py-4 rounded-full font-extrabold text-sm tracking-[0.1em] uppercase shadow-[0_8px_30px_rgba(216,231,35,0.3)] hover:bg-brand-lime-hover hover:shadow-[0_12px_40px_rgba(216,231,35,0.5)] hover:-translate-y-0.5 transition-all duration-400">Registro abierto</a>
+        <a href="#fechas" class="inline-block border border-brand-white-muted text-brand-white text-sm font-bold uppercase tracking-[0.1em] px-8 py-4 rounded-full hover:bg-brand-white-muted/10 hover:border-brand-lime/40 transition-all duration-300">Fechas</a>
+      </div>
+      <div class="reveal reveal-d4 mt-16 md:mt-20 flex gap-14">
+        <div><p class="font-title text-5xl md:text-7xl font-black text-brand-white leading-none">14</p><p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] mt-2">Categorías</p></div>
+        <div><p class="font-title text-5xl md:text-7xl font-black text-brand-white leading-none">3</p><p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] mt-2">Días</p></div>
+        <div><p class="font-title text-5xl md:text-7xl font-black text-brand-white leading-none">2</p><p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] mt-2">Eventos</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dates -->
+  <section id="fechas" class="relative -mt-20 z-20 px-6 md:px-16 max-w-6xl mx-auto">
+    <div class="bg-brand-dark-elevated/70 backdrop-blur-2xl rounded-[2.5rem] p-10 md:p-14 border border-brand-white-faint shadow-[0_0_80px_rgba(0,0,0,0.35)]">
+      <div class="grid md:grid-cols-2 gap-12 md:gap-16">
+        <div class="reveal">
+          <p class="text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.25em] mb-3">Competencia & Workshop</p>
+          <h3 class="font-title text-3xl md:text-4xl font-black text-brand-white mb-1">17–19 abr</h3>
+          <p class="italic-display italic text-xl text-brand-white-muted/40 mb-4">2026</p>
+          <p class="text-sm text-brand-white-muted/60 leading-relaxed">Clases magistrales, talleres prácticos, audiciones en vivo, premios en efectivo y becas con jurado internacional.</p>
+        </div>
+        <div class="reveal reveal-d-1">
+          <p class="text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.25em] mb-3">Competencia & Convención</p>
+          <h3 class="font-title text-3xl md:text-4xl font-black text-brand-white mb-1">1–3 may</h3>
+          <p class="italic-display italic text-xl text-brand-white-muted/40 mb-4">2026</p>
+          <p class="text-sm text-brand-white-muted/60 leading-relaxed">Convención con showcases, coreógrafos invitados, networking con compañías y gala en escenario exterior.</p>
+        </div>
+      </div>
+      <div class="reveal reveal-d-2 mt-10 pt-10 border-t border-brand-white-faint flex flex-wrap gap-12 text-sm text-brand-white-muted/50">
+        <div><span class="block text-[10px] text-brand-white-muted/30 uppercase tracking-[0.15em] mb-1">Ubicación</span><span class="font-body font-medium text-brand-white">Caborca, Sonora</span></div>
+        <div><span class="block text-[10px] text-brand-white-muted/30 uppercase tracking-[0.15em] mb-1">Contacto</span><span class="font-body font-medium text-brand-white">WhatsApp (662) 222 4220</span></div>
+        <div><span class="block text-[10px] text-brand-white-muted/30 uppercase tracking-[0.15em] mb-1">Social</span><span class="font-body font-medium">@desertdance</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Registration -->
+  <section id="registro" class="relative py-28 md:py-36 px-6 md:px-16">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="reveal font-title text-5xl md:text-8xl font-black text-brand-white tracking-tight leading-[0.82] mb-4">Regístrate <span class="italic-display italic text-brand-lime font-light">ahora</span></h2>
+      <p class="reveal reveal-d-1 text-brand-white-muted/50 text-base md:text-xl max-w-lg mb-14">Tu estudio compite por equipos. Completa el registro antes del cierre. Las plazas son limitadas.</p>
+      <form id="registration-form" class="reveal reveal-d-2 bg-brand-dark-elevated/50 backdrop-blur-xl rounded-[2rem] p-8 md:p-12 border border-brand-white-faint shadow-[0_0_60px_rgba(216,231,35,0.08)] space-y-6">
+
+        <!-- Equipo / estudio -->
+        <div class="space-y-5">
+          <h3 class="font-title text-xl font-black text-brand-white">1 · Datos del equipo</h3>
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label for="team-name" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Nombre del estudio / equipo</label>
+              <input id="team-name" name="team-name" type="text" placeholder="Ej. Academia Alzira" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+            </div>
+            <div>
+              <label for="origin-city" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Ciudad de origen</label>
+              <input id="origin-city" name="origin-city" type="text" placeholder="Ej. Hermosillo, Sonora" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+            </div>
+            <div>
+              <label for="contact-name" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Contacto (capitán / representante)</label>
+              <input id="contact-name" name="contact-name" type="text" placeholder="Juan Pérez" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+            </div>
+            <div>
+              <label for="contact-phone" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Teléfono del capitán</label>
+              <input id="contact-phone" name="contact-phone" type="tel" placeholder="+52 662 222 4220" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
+            </div>
+            <div class="sm:col-span-2">
+              <label for="contact-email" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Correo del contacto</label>
+              <input id="contact-email" name="contact-email" type="email" placeholder="estudio@ejemplo.com" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logo + música -->
+        <div class="space-y-5 pt-4 border-t border-brand-white-faint">
+          <h3 class="font-title text-xl font-black text-brand-white">2 · Logo y música</h3>
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label for="team-logo" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Logo del estudio <span class="normal-case tracking-normal text-brand-white-muted/40">(PNG/SVG)</span></label>
+              <input id="team-logo" name="team-logo" type="file" accept="image/png,image/svg+xml,image/jpeg" required
+                class="w-full text-sm text-brand-white-muted file:mr-4 file:rounded-xl file:border-0 file:bg-brand-lime file:text-brand-dark file:font-extrabold file:uppercase file:tracking-wider file:text-xs file:px-4 file:py-3 hover:file:bg-brand-lime-hover file:transition-colors cursor-pointer bg-brand-dark/50 border border-brand-white-faint rounded-xl file:py-3 px-3 py-2">
+            </div>
+            <div>
+              <label for="team-music" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Música de tu rutina <span class="normal-case tracking-normal text-brand-white-muted/40">(MP3, máx. 20 MB)</span></label>
+              <input id="team-music" name="team-music" type="file" accept="audio/mpeg,audio/mp3,audio/wav" required
+                class="w-full text-sm text-brand-white-muted file:mr-4 file:rounded-xl file:border-0 file:bg-brand-lime file:text-brand-dark file:font-extrabold file:uppercase file:tracking-wider file:text-xs file:px-4 file:py-3 hover:file:bg-brand-lime-hover file:transition-colors cursor-pointer bg-brand-dark/50 border border-brand-white-faint rounded-xl px-3 py-2">
+            </div>
+          </div>
+        </div>
+
+        <!-- Bailarines -->
+        <div class="space-y-5 pt-4 border-t border-brand-white-faint">
+          <div class="flex items-center justify-between">
+            <h3 class="font-title text-xl font-black text-brand-white">3 · Bailarines</h3>
+            <button type="button" id="add-dancer" class="text-xs font-bold uppercase tracking-[0.1em] text-brand-lime hover:text-brand-lime-hover transition-colors">+ Agregar</button>
+          </div>
+          <div id="dancers-list" class="space-y-3"></div>
+          <p class="text-[10px] text-brand-white-muted/30">Añade cada bailarín con su técnica (ej. contemporáneo, urbano, ballet) y división de edad.</p>
+        </div>
+
+        <p id="reg-error" class="hidden text-red-400 text-sm text-center"></p>
+        <button type="submit" class="w-full bg-gradient-to-r from-brand-lime to-brand-lime-hover text-brand-dark font-extrabold text-base tracking-[0.1em] uppercase py-5 rounded-2xl shadow-[0_0_30px_rgba(216,231,35,0.3)] hover:shadow-[0_0_50px_rgba(216,231,35,0.45)] hover:-translate-y-0.5 transition-all duration-300 mt-2">
+          Confirmar Registro
+        </button>
+        <p class="text-[10px] text-brand-white-muted/20 text-center">Tu información solo se usa para confirmar tu registro. No la compartimos con terceros.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section class="py-20 md:py-28 px-6 md:px-16 max-w-7xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="reveal font-title text-4xl md:text-7xl font-black text-brand-white tracking-tight mb-3">El escenario</h2>
+      <p class="reveal reveal-d-1 text-brand-white-muted/40 italic-display italic">Caborca — abril y mayo, 2026</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-5">
+      <img src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=80&auto=format" alt="Danza contemporánea — escena de competencia" class="reveal rounded-2xl w-full h-[420px] md:h-[520px] object-cover shadow-2xl hover:scale-[1.015] transition-transform duration-700" loading="lazy">
+      <img src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80&auto=format" alt="Competencia de danza aérea — coreografía profesional" class="reveal reveal-d-1 rounded-2xl w-full h-[420px] md:h-[520px] object-cover shadow-2xl hover:scale-[1.015] transition-transform duration-700" loading="lazy">
+      <img src="https://images.unsplash.com/photo-1515405295579-ba7b45403062?w=800&q=80&auto=format" alt="Taller práctico de movimiento" class="reveal reveal-d-2 rounded-2xl w-full h-[420px] md:h-[520px] object-cover shadow-2xl hover:scale-[1.015] transition-transform duration-700" loading="lazy">
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-brand-white-faint px-6 md:px-16 py-10 md:py-14 max-w-7xl mx-auto mt-4">
+    <div class="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+      <div>
+        <img src="assets/logos/horizontal_compact.svg" alt="Desert Dance" class="h-10 w-auto mb-3">
+        <p class="text-[10px] text-brand-white-muted/30 mt-1 tracking-[0.08em] uppercase">Competencia de Baile y Expresión Corporal — Caborca, Sonora</p>
+      </div>
+      <div class="flex gap-8 text-[11px] text-brand-white-muted/30 font-medium tracking-[0.06em] uppercase">
+        <a href="#fechas" class="hover:text-brand-lime transition-colors">Fechas</a>
+        <a href="#registro" class="hover:text-brand-lime transition-colors">Registro</a>
+        <a href="#" class="hover:text-brand-lime transition-colors">Contacto</a>
+      </div>
+    </div>
+    <div class="mt-8 pt-6 border-t border-brand-white-faint flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[10px] text-brand-white-muted/20">
+      <p>© Desert Dance 2026. Competencia de Baile y Expresión Corporal.</p>
+      <p>Brand kit Desert Dance Collective.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
