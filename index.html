@@ -45,6 +45,10 @@
     .reveal-d2 { animation-delay: 0.16s; }
     .reveal-d3 { animation-delay: 0.24s; }
     .reveal-d4 { animation-delay: 0.32s; }
+    /* Evita el auto-zoom de iOS al enfocar inputs */
+    @media (max-width: 640px) {
+      input, select, textarea { font-size: 16px !important; }
+    }
   </style>
   <link rel="icon" href="assets/logos/favicon-32.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png">
@@ -60,6 +64,7 @@
     </div>
     <div class="flex items-center space-x-4">
       <a href="#fechas" class="text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors hidden md:block">Fechas</a>
+      <a href="login.html" class="inline-block border border-brand-white-muted/40 text-brand-white text-xs font-bold uppercase tracking-[0.1em] px-5 py-2.5 rounded-full hover:bg-brand-white-muted/10 hover:border-brand-lime/50 hover:text-brand-lime transition-all duration-300">Acceso admin</a>
       <a href="#registro" class="px-6 py-2.5 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold uppercase tracking-[0.12em] hover:bg-brand-lime-hover transition-colors duration-300">Registro</a>
     </div>
   </nav>
@@ -125,67 +130,96 @@
     <div class="max-w-3xl mx-auto">
       <h2 class="reveal font-title text-5xl md:text-8xl font-black text-brand-white tracking-tight leading-[0.82] mb-4">Regístrate <span class="italic-display italic text-brand-lime font-light">ahora</span></h2>
       <p class="reveal reveal-d-1 text-brand-white-muted/50 text-base md:text-xl max-w-lg mb-14">Tu estudio compite por equipos. Completa el registro antes del cierre. Las plazas son limitadas.</p>
-      <form id="registration-form" class="reveal reveal-d-2 bg-brand-dark-elevated/50 backdrop-blur-xl rounded-[2rem] p-8 md:p-12 border border-brand-white-faint shadow-[0_0_60px_rgba(216,231,35,0.08)] space-y-6">
+      <form id="registration-form" class="reveal reveal-d-2 bg-brand-dark-elevated/50 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 md:p-12 border border-brand-white-faint shadow-[0_0_60px_rgba(216,231,35,0.08)]">
 
-        <!-- Equipo / estudio -->
-        <div class="space-y-5">
-          <h3 class="font-title text-xl font-black text-brand-white">1 · Datos del equipo</h3>
+        <!-- Progreso -->
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-3">
+            <p id="form-step-label" class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-brand-lime">Paso 1 de 3</p>
+            <p class="text-[11px] text-brand-white-muted/40">Toma menos de 2 minutos</p>
+          </div>
+          <div class="flex gap-2 mb-3">
+            <div class="h-1.5 flex-1 rounded-full bg-brand-white-faint overflow-hidden"><div data-step-fill="1" class="h-full bg-brand-lime rounded-full transition-all duration-500" style="width:0%"></div></div>
+            <div class="h-1.5 flex-1 rounded-full bg-brand-white-faint overflow-hidden"><div data-step-fill="2" class="h-full bg-brand-lime rounded-full transition-all duration-500" style="width:0%"></div></div>
+            <div class="h-1.5 flex-1 rounded-full bg-brand-white-faint overflow-hidden"><div data-step-fill="3" class="h-full bg-brand-lime rounded-full transition-all duration-500" style="width:0%"></div></div>
+          </div>
+          <div class="flex gap-6">
+            <span data-step-dot="1" class="text-[10px] font-bold uppercase tracking-[0.14em] text-brand-white-muted/35 transition-colors">1 · Equipo</span>
+            <span data-step-dot="2" class="text-[10px] font-bold uppercase tracking-[0.14em] text-brand-white-muted/35 transition-colors">2 · Logo</span>
+            <span data-step-dot="3" class="text-[10px] font-bold uppercase tracking-[0.14em] text-brand-white-muted/35 transition-colors">3 · Bailarines</span>
+          </div>
+        </div>
+
+        <!-- Paso 1 · Datos del equipo -->
+        <div class="step-panel space-y-5" data-step="1">
           <div class="grid sm:grid-cols-2 gap-5">
             <div>
-              <label for="team-name" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Nombre del estudio / equipo</label>
-              <input id="team-name" name="team-name" type="text" placeholder="Ej. Academia Alzira" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+              <label for="team-name" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Nombre del estudio / equipo <span class="text-brand-lime">*</span></label>
+              <input id="team-name" name="team-name" type="text" autocomplete="organization" placeholder="Ej. Academia Alzira" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
             </div>
             <div>
-              <label for="origin-city" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Ciudad de origen</label>
-              <input id="origin-city" name="origin-city" type="text" placeholder="Ej. Hermosillo, Sonora" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+              <label for="origin-city" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Ciudad de origen</label>
+              <input id="origin-city" name="origin-city" type="text" autocomplete="address-level2" placeholder="Ej. Hermosillo, Sonora" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
             </div>
             <div>
-              <label for="contact-name" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Contacto (capitán / representante)</label>
-              <input id="contact-name" name="contact-name" type="text" placeholder="Juan Pérez" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+              <label for="contact-name" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Contacto (capitán / representante) <span class="text-brand-lime">*</span></label>
+              <input id="contact-name" name="contact-name" type="text" autocomplete="name" placeholder="Juan Pérez" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
             </div>
             <div>
-              <label for="contact-phone" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Teléfono del capitán</label>
-              <input id="contact-phone" name="contact-phone" type="tel" placeholder="+52 662 222 4220" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
+              <label for="contact-phone" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Teléfono del capitán</label>
+              <input id="contact-phone" name="contact-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+52 662 222 4220" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
             </div>
             <div class="sm:col-span-2">
-              <label for="contact-email" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Correo del contacto</label>
-              <input id="contact-email" name="contact-email" type="email" placeholder="estudio@ejemplo.com" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-5 py-3.5 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" required>
+              <label for="contact-email" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Correo del contacto <span class="text-brand-lime">*</span></label>
+              <input id="contact-email" name="contact-email" type="email" autocomplete="email" placeholder="estudio@ejemplo.com" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
             </div>
           </div>
+          <p class="text-brand-white-muted/40 text-xs">Tu información solo se usa para confirmar tu registro. No la compartimos con terceros.</p>
         </div>
 
-        <!-- Logo + música -->
-        <div class="space-y-5 pt-4 border-t border-brand-white-faint">
-          <h3 class="font-title text-xl font-black text-brand-white">2 · Logo y música</h3>
+        <!-- Paso 2 · Logo y música -->
+        <div class="step-panel space-y-5 hidden" data-step="2">
           <div class="grid sm:grid-cols-2 gap-5">
             <div>
-              <label for="team-logo" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Logo del estudio <span class="normal-case tracking-normal text-brand-white-muted/40">(PNG/SVG)</span></label>
-              <input id="team-logo" name="team-logo" type="file" accept="image/png,image/svg+xml,image/jpeg" required
-                class="w-full text-sm text-brand-white-muted file:mr-4 file:rounded-xl file:border-0 file:bg-brand-lime file:text-brand-dark file:font-extrabold file:uppercase file:tracking-wider file:text-xs file:px-4 file:py-3 hover:file:bg-brand-lime-hover file:transition-colors cursor-pointer bg-brand-dark/50 border border-brand-white-faint rounded-xl file:py-3 px-3 py-2">
+              <label for="team-logo" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Logo del estudio <span class="text-brand-lime">*</span></label>
+              <div class="relative min-h-[120px] rounded-2xl border-2 border-dashed border-brand-white-faint bg-brand-dark/40 flex flex-col items-center justify-center gap-2 p-4 cursor-pointer hover:border-brand-lime/40 transition-colors">
+                <input id="team-logo" name="team-logo" type="file" accept="image/png,image/svg+xml,image/jpeg" class="absolute inset-0 opacity-0 cursor-pointer">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p id="logo-file-name" class="text-xs text-brand-white-muted/40 text-center px-2">Toca para elegir tu logo (PNG, SVG o JPG)</p>
+              </div>
             </div>
             <div>
-              <label for="team-music" class="block text-[10px] font-extrabold text-brand-white-muted/30 uppercase tracking-[0.2em] mb-2">Música de tu rutina <span class="normal-case tracking-normal text-brand-white-muted/40">(MP3, máx. 20 MB)</span></label>
-              <input id="team-music" name="team-music" type="file" accept="audio/mpeg,audio/mp3,audio/wav" required
-                class="w-full text-sm text-brand-white-muted file:mr-4 file:rounded-xl file:border-0 file:bg-brand-lime file:text-brand-dark file:font-extrabold file:uppercase file:tracking-wider file:text-xs file:px-4 file:py-3 hover:file:bg-brand-lime-hover file:transition-colors cursor-pointer bg-brand-dark/50 border border-brand-white-faint rounded-xl px-3 py-2">
+              <label for="team-music" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Música de tu rutina <span class="text-brand-lime">*</span></label>
+              <div class="relative min-h-[120px] rounded-2xl border-2 border-dashed border-brand-white-faint bg-brand-dark/40 flex flex-col items-center justify-center gap-2 p-4 cursor-pointer hover:border-brand-lime/40 transition-colors">
+                <input id="team-music" name="team-music" type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg" class="absolute inset-0 opacity-0 cursor-pointer">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <p id="music-file-name" class="text-xs text-brand-white-muted/40 text-center px-2">Toca para elegir tu música (MP3, máx. 20 MB)</p>
+              </div>
             </div>
           </div>
+          <p class="text-brand-white-muted/40 text-xs">Si tu logo o música son muy pesados, puedes enviarlos después por WhatsApp al (662) 222 4220.</p>
         </div>
 
-        <!-- Bailarines -->
-        <div class="space-y-5 pt-4 border-t border-brand-white-faint">
+        <!-- Paso 3 · Bailarines -->
+        <div class="step-panel space-y-5 hidden" data-step="3">
           <div class="flex items-center justify-between">
-            <h3 class="font-title text-xl font-black text-brand-white">3 · Bailarines</h3>
-            <button type="button" id="add-dancer" class="text-xs font-bold uppercase tracking-[0.1em] text-brand-lime hover:text-brand-lime-hover transition-colors">+ Agregar</button>
+            <h3 class="font-title text-xl font-black text-brand-white">Bailarines</h3>
+            <button type="button" id="add-dancer" class="inline-flex items-center justify-center min-h-[44px] px-4 rounded-full border border-brand-lime/40 text-brand-lime text-xs font-bold uppercase tracking-[0.1em] hover:bg-brand-lime-dim transition-colors">+ Agregar bailarín</button>
           </div>
           <div id="dancers-list" class="space-y-3"></div>
-          <p class="text-[10px] text-brand-white-muted/30">Añade cada bailarín con su técnica (ej. contemporáneo, urbano, ballet) y división de edad.</p>
+          <p class="text-brand-white-muted/40 text-xs">Opcional: puedes registrar el equipo y enviar la lista de bailarines después. Si agregas personas, pon su nombre y técnica (ej. contemporáneo, urbano, ballet).</p>
         </div>
 
-        <p id="reg-error" class="hidden text-red-400 text-sm text-center"></p>
-        <button type="submit" class="w-full bg-gradient-to-r from-brand-lime to-brand-lime-hover text-brand-dark font-extrabold text-base tracking-[0.1em] uppercase py-5 rounded-2xl shadow-[0_0_30px_rgba(216,231,35,0.3)] hover:shadow-[0_0_50px_rgba(216,231,35,0.45)] hover:-translate-y-0.5 transition-all duration-300 mt-2">
-          Confirmar Registro
-        </button>
-        <p class="text-[10px] text-brand-white-muted/20 text-center">Tu información solo se usa para confirmar tu registro. No la compartimos con terceros.</p>
+        <p id="reg-error" class="hidden text-red-400 text-sm text-center pt-1"></p>
+
+        <!-- Navegación entre pasos -->
+        <div class="flex gap-3 pt-6">
+          <button type="button" id="step-back" class="hidden min-h-[52px] flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-sm rounded-2xl hover:text-brand-white transition-colors">← Atrás</button>
+          <button type="button" id="step-next" class="min-h-[52px] flex-1 bg-brand-lime text-brand-dark font-extrabold text-sm tracking-[0.1em] uppercase rounded-2xl shadow-[0_0_30px_rgba(216,231,35,0.25)] hover:bg-brand-lime-hover hover:-translate-y-0.5 transition-all duration-300">Continuar →</button>
+          <button type="submit" id="form-submit" class="hidden min-h-[52px] flex-1 bg-gradient-to-r from-brand-lime to-brand-lime-hover text-brand-dark font-extrabold text-sm tracking-[0.1em] uppercase rounded-2xl shadow-[0_0_30px_rgba(216,231,35,0.3)] hover:shadow-[0_0_50px_rgba(216,231,35,0.45)] hover:-translate-y-0.5 transition-all duration-300">
+            Registrar equipo
+          </button>
+        </div>
       </form>
     </div>
   </section>

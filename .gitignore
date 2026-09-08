@@ -22,3 +22,5 @@ node_modules/
 
 # Archives
 *.zip
+.vercel
+.env*
