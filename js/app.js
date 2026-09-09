@@ -239,4 +239,31 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   renderStep(1);
+
+  // ---- FAQ Accordion ----
+  document.addEventListener('click', (e) => {
+    const toggle = e.target.closest('.faq-toggle');
+    if (!toggle) return;
+    const item = toggle.closest('.bg-brand-dark-elevated\\/50, [class*="bg-brand-dark-elevated"]');
+    if (!item) return;
+    const content = item.querySelector('.faq-content');
+    const icon = toggle.querySelector('.faq-icon');
+    if (!content) return;
+    content.classList.toggle('hidden');
+    if (icon) icon.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
+  });
+
+  // ---- Mobile Menu ----
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+    mobileMenu.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+      });
+    });
+  }
 });

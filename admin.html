@@ -354,6 +354,96 @@
     </div>
   </div>
 
+  <!-- Modal: Categoría -->
+  <div id="category-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal="category"></div>
+    <div class="relative bg-brand-dark-elevated rounded-3xl border border-brand-white-faint p-6 w-full max-w-md shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <div class="flex items-center justify-between mb-6">
+        <h3 id="category-modal-title" class="font-title text-xl font-black text-brand-white">Agregar categoría</h3>
+        <button data-close-modal="category" class="text-brand-white-muted/40 hover:text-brand-white transition-colors">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="category-form" class="space-y-4">
+        <input type="hidden" id="cf-id">
+        <div>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Nombre <span class="text-brand-lime">*</span></label>
+          <input id="cf-name" type="text" required placeholder="Ej. Danza Contemporánea" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Descripción</label>
+          <textarea id="cf-description" rows="2" placeholder="Descripción corta de la categoría" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors resize-none"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Máx. participantes</label>
+            <input id="cf-max" type="number" min="1" value="8" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Orden</label>
+            <input id="cf-sort" type="number" min="0" value="0" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Estado</label>
+          <select id="cf-active" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            <option value="true">Activa</option>
+            <option value="false">Inactiva</option>
+          </select>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" data-close-modal="category" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-sm py-3 rounded-xl hover:text-brand-white transition-colors">Cancelar</button>
+          <button type="submit" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-3 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Administrador -->
+  <div id="admin-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal="admin"></div>
+    <div class="relative bg-brand-dark-elevated rounded-3xl border border-brand-white-faint p-6 w-full max-w-md shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <div class="flex items-center justify-between mb-6">
+        <h3 id="admin-modal-title" class="font-title text-xl font-black text-brand-white">Agregar administrador</h3>
+        <button data-close-modal="admin" class="text-brand-white-muted/40 hover:text-brand-white transition-colors">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="admin-form" class="space-y-4">
+        <input type="hidden" id="af-id">
+        <div>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Email <span class="text-brand-lime">*</span></label>
+          <input id="af-email" type="email" required placeholder="admin@desertdance.mx" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Nombre</label>
+          <input id="af-name" type="text" placeholder="Nombre completo" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Rol</label>
+            <select id="af-role" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+              <option value="admin">Admin</option>
+              <option value="editor">Editor</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Estado</label>
+            <select id="af-active" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" data-close-modal="admin" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-sm py-3 rounded-xl hover:text-brand-white transition-colors">Cancelar</button>
+          <button type="submit" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-3 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="hidden fixed bottom-6 right-6 z-[70] toast"></div>
 

@@ -203,8 +203,9 @@
   }
 
   async function createCategory(data) {
-    const { error } = await supabase.from('categories').insert([data]);
+    const { data: created, error } = await supabase.from('categories').insert([data]).select('id').single();
     if (error) throw error;
+    return created?.id;
   }
 
   async function updateCategory(id, data) {
@@ -214,6 +215,22 @@
 
   async function deleteCategory(id) {
     const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async function createAdminUser(data) {
+    const { data: created, error } = await supabase.from('admin_users').insert([data]).select('id').single();
+    if (error) throw error;
+    return created?.id;
+  }
+
+  async function updateAdminUser(id, data) {
+    const { error } = await supabase.from('admin_users').update(data).eq('id', id);
+    if (error) throw error;
+  }
+
+  async function deleteAdminUser(id) {
+    const { error } = await supabase.from('admin_users').delete().eq('id', id);
     if (error) throw error;
   }
 
@@ -797,11 +814,24 @@
   // -- Tab: Calendar --
   function renderCalendarTab(team, container) {
     const sched = team.scheduled_time ? new Date(team.scheduled_time) : null;
+    const schedValue = team.scheduled_time ? team.scheduled_time.slice(0, 16) : '';
     container.innerHTML = `
       <div class="grid md:grid-cols-2 gap-6">
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-4">Presentación</p>
-          ${sched ? `<div class="flex items-center gap-4"><div class="w-14 h-14 rounded-xl bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center"><span class="font-title text-2xl font-black text-brand-lime">${sched.getDate()}</span></div><div><p class="font-title text-lg font-bold text-brand-white">${sched.toLocaleDateString('es-MX', { weekday: 'long', month: 'long' })}</p><p class="text-brand-white-muted/50 text-sm">${sched.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} hrs</p></div></div>` : '<p class="text-brand-white-muted/30 text-sm text-center py-6">Sin horario asignado</p>'}
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Presentación</p>
+            <button data-action="edit-schedule" data-team="${team.id}" class="text-[10px] font-bold uppercase tracking-wider text-brand-lime hover:underline">Editar</button>
+          </div>
+          <div id="schedule-display">
+            ${sched ? `<div class="flex items-center gap-4"><div class="w-14 h-14 rounded-xl bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center"><span class="font-title text-2xl font-black text-brand-lime">${sched.getDate()}</span></div><div><p class="font-title text-lg font-bold text-brand-white">${sched.toLocaleDateString('es-MX', { weekday: 'long', month: 'long', year: 'numeric' })}</p><p class="text-brand-white-muted/50 text-sm">${sched.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} hrs</p></div></div>` : '<p class="text-brand-white-muted/30 text-sm text-center py-6">Sin horario asignado</p>'}
+          </div>
+          <div id="schedule-edit" class="hidden mt-4">
+            <input id="inline-schedule" type="datetime-local" value="${schedValue}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            <div class="flex gap-2 mt-3">
+              <button id="save-schedule" data-team="${team.id}" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-2.5 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
+              <button id="cancel-schedule" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-xs py-2.5 rounded-xl hover:text-brand-white transition-colors">Cancelar</button>
+            </div>
+          </div>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-4">Evento</p>
@@ -981,20 +1011,33 @@
   // ============================================================
   function renderAdmins(container) {
     container.innerHTML = `
-      <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-6">Administradores</h2>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Administradores</h2>
+        <button data-action="add-admin" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar
+        </button>
+      </div>
       <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
         <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
           <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Email</th>
           <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Nombre</th>
           <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Rol</th>
           <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Estado</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold text-right">Acciones</th>
         </tr></thead><tbody>
           ${state.adminUsers.map(a => `
-            <tr class="border-b border-brand-white-faint/40">
+            <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
               <td class="px-5 py-3 text-brand-white">${esc(a.email)}</td>
               <td class="px-5 py-3 text-brand-white-muted/70">${esc(a.name || '—')}</td>
               <td class="px-5 py-3"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 bg-brand-lime/10 text-brand-lime">${esc(a.role)}</span></td>
               <td class="px-5 py-3"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${a.is_active ? '#d8e723' : '#ef4444'};background:${a.is_active ? 'rgba(216,231,35,0.12)' : 'rgba(239,68,68,0.12)'}">${a.is_active ? 'Activo' : 'Inactivo'}</span></td>
+              <td class="px-5 py-3">
+                <div class="flex justify-end gap-1.5">
+                  <button data-action="edit-admin" data-id="${a.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                  <button data-action="delete-admin" data-id="${a.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                </div>
+              </td>
             </tr>`).join('')}
         </tbody></table>
       </div>`;
@@ -1079,6 +1122,27 @@
     openModal('payment');
   }
 
+  function openCategoryModal(cat = null) {
+    $('category-modal-title').textContent = cat ? 'Editar categoría' : 'Agregar categoría';
+    $('cf-id').value = cat?.id || '';
+    $('cf-name').value = cat?.name || '';
+    $('cf-description').value = cat?.description || '';
+    $('cf-max').value = cat?.max_participants || 8;
+    $('cf-sort').value = cat?.sort_order || 0;
+    $('cf-active').value = cat?.is_active !== false ? 'true' : 'false';
+    openModal('category');
+  }
+
+  function openAdminModal(admin = null) {
+    $('admin-modal-title').textContent = admin ? 'Editar administrador' : 'Agregar administrador';
+    $('af-id').value = admin?.id || '';
+    $('af-email').value = admin?.email || '';
+    $('af-name').value = admin?.name || '';
+    $('af-role').value = admin?.role || 'admin';
+    $('af-active').value = admin?.is_active !== false ? 'true' : 'false';
+    openModal('admin');
+  }
+
   function openDeleteModal(title, message, onConfirm) {
     $('delete-title').textContent = title;
     $('delete-message').textContent = message;
@@ -1115,9 +1179,13 @@
         case 'add-payment': openPaymentModal(teamId); break;
         case 'edit-payment': { const tid = resolveRoute().teamId; const d = state.teamData[tid]; const p = d?.payments?.all?.find(x => x.id === id); if (p) openPaymentModal(tid, p); break; }
         case 'delete-payment': openDeleteModal('¿Eliminar pago?', 'Esta acción no se puede deshacer.', async () => { await deletePayment(id); const tid = resolveRoute().teamId; delete state.teamData[tid]; navigate(); }); break;
-        case 'add-category': { const name = prompt('Nombre de la categoría:'); if (name) { await createCategory({ name }); state.categories.push({ name, is_active: true, max_participants: 8, sort_order: state.categories.length }); navigate(); toast('Categoría creada'); } break; }
-        case 'edit-category': { const c = state.categories.find(x => x.id === id); if (c) { const name = prompt('Nombre:', c.name); if (name) { await updateCategory(id, { name }); c.name = name; navigate(); } } break; }
-        case 'delete-category': openDeleteModal('¿Eliminar categoría?', 'Esta acción no se puede deshacer.', async () => { await deleteCategory(id); state.categories = state.categories.filter(x => x.id !== id); navigate(); }); break;
+        case 'add-category': openCategoryModal(); break;
+        case 'edit-category': { const c = state.categories.find(x => x.id === id); if (c) openCategoryModal(c); break; }
+        case 'delete-category': openDeleteModal('¿Eliminar categoría?', 'Esta acción no se puede deshacer.', async () => { await deleteCategory(id); state.categories = state.categories.filter(x => x.id !== id); navigate(); toast('Categoría eliminada'); }); break;
+        case 'add-admin': openAdminModal(); break;
+        case 'edit-admin': { const a = state.adminUsers.find(x => x.id === id); if (a) openAdminModal(a); break; }
+        case 'delete-admin': openDeleteModal('¿Eliminar administrador?', 'Esta acción no se puede deshacer.', async () => { await deleteAdminUser(id); state.adminUsers = state.adminUsers.filter(x => x.id !== id); navigate(); toast('Administrador eliminado'); }); break;
+        case 'edit-schedule': { document.getElementById('schedule-display').classList.add('hidden'); document.getElementById('schedule-edit').classList.remove('hidden'); break; }
         case 'export-teams': exportCSV('teams'); break;
         case 'export-dancers': exportCSV('dancers'); break;
         case 'export-payments': exportCSV('payments'); break;
@@ -1163,13 +1231,16 @@
     e.preventDefault();
     const id = $('df-id').value;
     const teamId = $('df-team-id').value;
+    const team = state.teams.find(t => t.id === teamId);
     const data = {
       team_id: teamId,
       full_name: $('df-name').value.trim(),
       technique: $('df-technique').value.trim(),
       division: $('df-division').value.trim(),
       routine_title: $('df-routine').value.trim(),
-      status: 'active'
+      email: team?.contact_email || '',
+      school_name: team?.name || '',
+      status: 'pending'
     };
     try {
       if (id) {
@@ -1178,7 +1249,10 @@
         await createDancer(data);
       }
       delete state.teamData[teamId];
-      state.dancersByTeam[teamId] = (state.dancersByTeam[teamId] || []).filter(d => d.id !== id);
+      const { data: dancers, error: dancersError } = await supabase
+        .from('participants').select('*').eq('team_id', teamId).order('created_at', { ascending: true });
+      if (dancersError) throw dancersError;
+      state.dancersByTeam[teamId] = dancers || [];
       openModal(null);
       navigate();
       toast(id ? 'Bailarín actualizado' : 'Bailarín agregado');
@@ -1253,6 +1327,81 @@
       if (tid) delete state.teamData[tid];
       navigate();
     });
+  });
+
+  // Category form
+  $('category-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = $('cf-id').value;
+    const data = {
+      name: $('cf-name').value.trim(),
+      description: $('cf-description').value.trim(),
+      max_participants: parseInt($('cf-max').value) || 8,
+      sort_order: parseInt($('cf-sort').value) || 0,
+      is_active: $('cf-active').value === 'true'
+    };
+    try {
+      if (id) {
+        await updateCategory(id, data);
+        const c = state.categories.find(x => x.id === id);
+        Object.assign(c, data);
+        toast('Categoría actualizada');
+      } else {
+        const newId = await createCategory(data);
+        state.categories.push({ id: newId, ...data });
+        state.categories.sort((a, b) => a.sort_order - b.sort_order);
+        toast('Categoría creada');
+      }
+      openModal(null);
+      navigate();
+    } catch (err) { toast(err.message, false); }
+  });
+
+  // Admin form
+  $('admin-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = $('af-id').value;
+    const data = {
+      email: $('af-email').value.trim(),
+      name: $('af-name').value.trim(),
+      role: $('af-role').value,
+      is_active: $('af-active').value === 'true'
+    };
+    try {
+      if (id) {
+        await updateAdminUser(id, data);
+        const a = state.adminUsers.find(x => x.id === id);
+        Object.assign(a, data);
+        toast('Administrador actualizado');
+      } else {
+        const newId = await createAdminUser(data);
+        state.adminUsers.push({ id: newId, ...data });
+        toast('Administrador creado');
+      }
+      openModal(null);
+      navigate();
+    } catch (err) { toast(err.message, false); }
+  });
+
+  // Inline schedule edit
+  document.addEventListener('click', async (e) => {
+    if (e.target.id === 'save-schedule') {
+      const teamId = e.target.dataset.team;
+      const val = document.getElementById('inline-schedule').value;
+      const scheduled_time = val ? new Date(val).toISOString() : null;
+      try {
+        await updateTeam(teamId, { scheduled_time });
+        const t = state.teams.find(x => x.id === teamId);
+        if (t) t.scheduled_time = scheduled_time;
+        delete state.teamData[teamId];
+        navigate();
+        toast('Horario actualizado');
+      } catch (err) { toast(err.message, false); }
+    }
+    if (e.target.id === 'cancel-schedule') {
+      document.getElementById('schedule-display').classList.remove('hidden');
+      document.getElementById('schedule-edit').classList.add('hidden');
+    }
   });
 
   // Sidebar toggle
