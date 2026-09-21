@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const btn = stepSubmit;
     const originalHTML = btn.innerHTML;
-    btn.innerHTML = 'Subiendo, un momento…';
+    btn.innerHTML = 'Validando con IA…';
     btn.disabled = true;
 
     const teamName = form.querySelector('#team-name').value.trim();
@@ -179,6 +179,35 @@ document.addEventListener('DOMContentLoaded', function () {
     const contactName = form.querySelector('#contact-name').value.trim();
     const contactPhone = form.querySelector('#contact-phone').value.trim();
     const contactEmail = form.querySelector('#contact-email').value.trim();
+
+    try {
+      if (window.TypeSafe) {
+        const answers = await window.TypeSafe.validateRegistration({
+          team_name: teamName,
+          origin_city: originCity,
+          contact_name: contactName,
+          contact_email: contactEmail,
+        });
+
+        if (answers.name_appropriate && answers.name_appropriate.noul < 0.7) {
+          showError('El nombre del equipo no es apropiado. Por favor, elige otro.');
+          btn.innerHTML = originalHTML;
+          btn.disabled = false;
+          return;
+        }
+
+        if (answers.is_complete && answers.is_complete.noul < 0.8) {
+          showError('Parece que faltan datos. Revisa que todos los campos obligatorios estén llenos.');
+          btn.innerHTML = originalHTML;
+          btn.disabled = false;
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('TypeSafe validation skipped:', err);
+    }
+
+    btn.innerHTML = 'Subiendo, un momento…';
 
     const logoFile = form.querySelector('#team-logo').files[0];
     const musicFile = form.querySelector('#team-music').files[0];
