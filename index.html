@@ -239,16 +239,25 @@
         </div>
       </div>
     </div>
-    <div class="reveal mt-6 bg-brand-dark-elevated/30 rounded-2xl p-6 border border-brand-white-faint">
-      <h4 class="font-title text-lg font-bold text-brand-white mb-4 text-center">Géneros</h4>
-      <div class="flex flex-wrap justify-center gap-3">
-        <span class="text-sm font-bold px-4 py-2 rounded-full bg-brand-lime/10 text-brand-lime border border-brand-lime/20">Ballet</span>
-        <span class="text-sm font-bold px-4 py-2 rounded-full bg-brand-lime/10 text-brand-lime border border-brand-lime/20">Contemporáneo</span>
-        <span class="text-sm font-bold px-4 py-2 rounded-full bg-brand-lime/10 text-brand-lime border border-brand-lime/20">Jazz</span>
-        <span class="text-sm font-bold px-4 py-2 rounded-full bg-brand-lime/10 text-brand-lime border border-brand-lime/20">Urbano</span>
-        <span class="text-sm font-bold px-4 py-2 rounded-full bg-brand-lime/10 text-brand-lime border border-brand-lime/20">Poms</span>
-        <span class="text-sm font-bold px-4 py-2 rounded-full bg-brand-lime/10 text-brand-lime border border-brand-lime/20">Open</span>
-        <span class="text-sm font-bold px-4 py-2 rounded-full bg-brand-lime/10 text-brand-lime border border-brand-lime/20">Exhibición</span>
+    <div class="reveal mt-6 max-w-5xl mx-auto">
+      <h4 class="font-title text-lg font-bold text-brand-white mb-6 text-center">Géneros</h4>
+      <div class="relative group/carousel">
+        <!-- Flecha anterior -->
+        <button id="genre-prev" type="button" aria-label="Anterior" class="absolute left-1 md:left-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-brand-dark/90 backdrop-blur border border-brand-white-faint text-brand-white hover:border-brand-lime/50 hover:text-brand-lime transition-all flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <!-- Carrusel con recorte -->
+        <div class="overflow-hidden rounded-2xl">
+          <div id="genre-track" class="flex flex-nowrap gap-4 md:gap-6 px-1 transition-transform duration-500 ease-out">
+            <!-- Cada card se inyecta por JS -->
+          </div>
+        </div>
+        <!-- Flecha siguiente -->
+        <button id="genre-next" type="button" aria-label="Siguiente" class="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-brand-dark/90 backdrop-blur border border-brand-white-faint text-brand-white hover:border-brand-lime/50 hover:text-brand-lime transition-all flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <!-- Dots -->
+        <div id="genre-dots" class="flex justify-center gap-2 mt-6"></div>
       </div>
     </div>
   </section>
@@ -427,5 +436,6 @@
     });
   </script>
 
+<script src="js/genre-carousel.js"></script>
 </body>
 </html>
