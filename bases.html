@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bases del concurso y cuotas de inscripción — Desert Dance Competition. Primera edición, 27 y 28 de noviembre de 2026, H. Caborca, Sonora.">
+  <title>Bases y Cuotas — Desert Dance Competition 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;1,9..40,400&family=Jost:wght@300;400;600;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-dark': '#231f20',
+            'brand-dark-elevated': '#2a2627',
+            'brand-lime': '#d8e723',
+            'brand-lime-hover': '#bcc91b',
+            'brand-lime-dim': 'rgba(216,231,35,0.12)',
+            'brand-white': '#ffffff',
+            'brand-white-muted': 'rgba(255,255,255,0.55)',
+            'brand-white-faint': 'rgba(255,255,255,0.08)',
+          },
+          fontFamily: {
+            'title': ["'Jost'", 'sans-serif'],
+            'italic-display': ["'Cormorant Garamond'", 'serif'],
+            'body': ["'DM Sans'", 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::selection { background: rgba(216,231,35,0.25); color: #ffffff; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: #231f20; color: #ffffff; }
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { animation: revealUp 1s ease-out both; }
+    .reveal-d1 { animation-delay: 0.08s; }
+    .reveal-d2 { animation-delay: 0.16s; }
+    .reveal-d3 { animation-delay: 0.24s; }
+    .reveal-d4 { animation-delay: 0.32s; }
+    @media (max-width: 640px) {
+      input, select, textarea { font-size: 16px !important; }
+    }
+  </style>
+  <link rel="icon" href="assets/logos/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png">
+</head>
+<body class="antialiased overflow-x-hidden">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-brand-dark/60 border-b border-brand-white-faint">
+    <div class="px-6 md:px-16 py-4 flex items-center justify-between max-w-7xl mx-auto">
+      <a href="index.html" class="flex items-center">
+        <img src="assets/logos/horizontal_compact.svg" alt="Desert Dance" class="h-9 w-auto">
+      </a>
+      <div class="hidden lg:flex items-center gap-6">
+        <a href="index.html#fechas" class="text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors">Fechas</a>
+        <a href="index.html#categorias" class="text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors">Modalidades</a>
+        <a href="bases.html" class="text-brand-lime text-sm font-medium transition-colors">Bases</a>
+        <a href="puntos.html" class="text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors">Evaluación</a>
+        <a href="informacion.html" class="text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors">Visítanos</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="login.html" class="hidden md:inline-flex items-center gap-2 text-xs text-brand-white-muted/60 hover:text-brand-lime transition-colors font-medium">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Admin
+        </a>
+        <a href="index.html#registro" class="px-5 py-2.5 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold uppercase tracking-[0.12em] hover:bg-brand-lime-hover transition-colors duration-300">Regístrate</a>
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-brand-white-muted/60 hover:text-brand-white">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden lg:hidden border-t border-brand-white-faint bg-brand-dark/95 backdrop-blur-xl">
+      <div class="px-6 py-4 space-y-3">
+        <a href="index.html#fechas" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Fechas</a>
+        <a href="index.html#categorias" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Modalidades</a>
+        <a href="bases.html" class="block text-brand-lime text-sm font-medium transition-colors py-2">Bases</a>
+        <a href="puntos.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Evaluación</a>
+        <a href="informacion.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Visítanos</a>
+        <a href="login.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <header class="relative pt-40 pb-20 md:pt-52 md:pb-28 px-6 md:px-16 overflow-hidden">
+    <img src="assets/images/Backgroundimage.png" alt="" class="absolute inset-0 w-full h-full object-cover object-center opacity-25">
+    <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/70 to-brand-dark/30"></div>
+    <div class="relative z-10 max-w-4xl mx-auto text-center">
+      <p class="reveal text-brand-lime text-[11px] md:text-xs font-extrabold tracking-[0.3em] uppercase mb-6">Reglamento · 2026</p>
+      <h1 class="reveal reveal-d1 font-title text-4xl md:text-6xl font-black text-brand-white tracking-tight">
+        Bases del <span class="italic-display italic text-brand-lime font-light">concurso</span>
+      </h1>
+      <p class="reveal reveal-d2 text-brand-white-muted/60 text-base md:text-lg max-w-2xl mx-auto mt-6">
+        Requisitos de inscripción, cuotas y premiación. Todo lo que necesitas saber antes de registrar a tu estudio.
+      </p>
+    </div>
+  </header>
+
+  <!-- ¿Por qué participar? -->
+  <section class="py-16 md:py-24 px-6 md:px-16 max-w-7xl mx-auto">
+    <div class="text-center mb-14">
+      <p class="reveal text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.25em] mb-3">Beneficios</p>
+      <h2 class="reveal reveal-d1 font-title text-3xl md:text-5xl font-black text-brand-white tracking-tight">
+        ¿Por qué <span class="italic-display italic text-brand-lime font-light">Desert Dance</span>?
+      </h2>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint hover:border-brand-lime/30 transition-colors">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 6 9 6 9zm0 0h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm0 0v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9"/></svg>
+          </div>
+          <h3 class="font-title text-lg font-bold text-brand-white">Medallas y Trofeos</h3>
+        </div>
+        <p class="text-sm text-brand-white-muted/60 leading-relaxed">Medallas Oro, Plata y Bronce para solistas, dúos y trias. Trofeos para grupos y categorías colegiales.</p>
+      </div>
+      <div class="reveal reveal-d1 bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint hover:border-brand-lime/30 transition-colors">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h3 class="font-title text-lg font-bold text-brand-white">Campeón Absoluto</h3>
+        </div>
+        <p class="text-sm text-brand-white-muted/60 leading-relaxed">La rutina con la calificación más alta del evento recibe el título de Campeón Absoluto.</p>
+      </div>
+      <div class="reveal reveal-d2 bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint hover:border-brand-lime/30 transition-colors">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3 class="font-title text-lg font-bold text-brand-white">Becas y Convenios</h3>
+        </div>
+        <p class="text-sm text-brand-white-muted/60 leading-relaxed">Invitaciones, descuentos y apoyos según convenios vigentes con escuelas y compañías.</p>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint hover:border-brand-lime/30 transition-colors">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3 class="font-title text-lg font-bold text-brand-white">7 Modalidades</h3>
+        </div>
+        <p class="text-sm text-brand-white-muted/60 leading-relaxed">Solista, dúo, tercia, grupo pequeño, grupo grande, colegial y exhibición. Algo para cada bailarín.</p>
+      </div>
+      <div class="reveal reveal-d1 bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint hover:border-brand-lime/30 transition-colors">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          </div>
+          <h3 class="font-title text-lg font-bold text-brand-white">6 Géneros</h3>
+        </div>
+        <p class="text-sm text-brand-white-muted/60 leading-relaxed">Ballet, contemporáneo, jazz, urbano, poms, open y exhibición. Diversidad de estilos en un solo evento.</p>
+      </div>
+      <div class="reveal reveal-d2 bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint hover:border-brand-lime/30 transition-colors">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <h3 class="font-title text-lg font-bold text-brand-white">Evaluación Profesional</h3>
+        </div>
+        <p class="text-sm text-brand-white-muted/60 leading-relaxed">Sistema de evaluación de 100 puntos con 8 criterios técnicos. Juicio objetivo y transparente.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Requisitos -->
+  <section id="requisitos" class="py-16 md:py-24 px-6 md:px-16 max-w-5xl mx-auto">
+    <div class="text-center mb-14">
+      <p class="reveal text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.25em] mb-3">Requisitos</p>
+      <h2 class="reveal reveal-d1 font-title text-3xl md:text-5xl font-black text-brand-white tracking-tight">
+        Para <span class="italic-display italic text-brand-lime font-light">inscribirte</span>
+      </h2>
+    </div>
+    <div class="space-y-6">
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint">
+        <h3 class="font-title text-lg font-bold text-brand-white mb-3">Requisitos de Inscripción</h3>
+        <ul class="space-y-2 text-sm text-brand-white-muted/60">
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>Completar formulario oficial de registro</li>
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>Proporcionar datos de cada participante</li>
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>Adjuntar comprobante de pago</li>
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>Entregar pista musical en formato solicitado</li>
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>Aceptar Reglamento Deportivo y políticas del evento</li>
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>Carta responsiva firmada por entrenador o director</li>
+        </ul>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint">
+        <h3 class="font-title text-lg font-bold text-brand-white mb-3">Categoría Colegial — Requisito Extra</h3>
+        <p class="text-sm text-brand-white-muted/60 leading-relaxed">Constancia oficial en hoja membretada (firmada y sellada) con nombre completo, fecha de nacimiento, CURP y confirmación de inscripción activa de cada alumno.</p>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint">
+        <h3 class="font-title text-lg font-bold text-brand-white mb-3">Notas</h3>
+        <ul class="space-y-2 text-sm text-brand-white-muted/60">
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>Las cuotas son no reembolsables, salvo causa atribuible a la organización</li>
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>El Comité puede reclasificar si detecta nivel incorrecto</li>
+          <li class="flex items-start gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2" class="flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>La programación está sujeta a ajustes por logística</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cuotas -->
+  <section id="cuotas" class="py-16 md:py-24 px-6 md:px-16 max-w-5xl mx-auto">
+    <div class="text-center mb-14">
+      <p class="reveal text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.25em] mb-3">Inscripción</p>
+      <h2 class="reveal reveal-d1 font-title text-3xl md:text-5xl font-black text-brand-white tracking-tight">
+        Cuotas de <span class="italic-display italic text-brand-lime font-light">inscripción</span>
+      </h2>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint text-center">
+        <p class="text-[10px] text-brand-white-muted/40 font-extrabold uppercase tracking-[0.2em] mb-2">Solista</p>
+        <div class="flex items-baseline justify-center gap-1 mb-2">
+          <span class="font-title text-4xl font-black text-brand-white">$800</span>
+          <span class="text-brand-white-muted/50 text-xs">MXN</span>
+        </div>
+        <p class="text-xs text-brand-white-muted/40">1 bailarín · Máx. 3:00 min</p>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint text-center">
+        <p class="text-[10px] text-brand-white-muted/40 font-extrabold uppercase tracking-[0.2em] mb-2">Dúo</p>
+        <div class="flex items-baseline justify-center gap-1 mb-2">
+          <span class="font-title text-4xl font-black text-brand-white">$650</span>
+          <span class="text-brand-white-muted/50 text-xs">MXN</span>
+        </div>
+        <p class="text-xs text-brand-white-muted/40">2 bailarines · Máx. 3:00 min</p>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint text-center">
+        <p class="text-[10px] text-brand-white-muted/40 font-extrabold uppercase tracking-[0.2em] mb-2">Tercia</p>
+        <div class="flex items-baseline justify-center gap-1 mb-2">
+          <span class="font-title text-4xl font-black text-brand-white">$650</span>
+          <span class="text-brand-white-muted/50 text-xs">MXN</span>
+        </div>
+        <p class="text-xs text-brand-white-muted/40">3 bailarines · Máx. 3:00 min</p>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint text-center">
+        <p class="text-[10px] text-brand-white-muted/40 font-extrabold uppercase tracking-[0.2em] mb-2">Grupo Pequeño</p>
+        <div class="flex items-baseline justify-center gap-1 mb-2">
+          <span class="font-title text-4xl font-black text-brand-white">$600</span>
+          <span class="text-brand-white-muted/50 text-xs">MXN</span>
+        </div>
+        <p class="text-xs text-brand-white-muted/40">4–9 bailarines · Máx. 3:00 min</p>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint text-center">
+        <p class="text-[10px] text-brand-white-muted/40 font-extrabold uppercase tracking-[0.2em] mb-2">Grupo Grande</p>
+        <div class="flex items-baseline justify-center gap-1 mb-2">
+          <span class="font-title text-4xl font-black text-brand-white">$500</span>
+          <span class="text-brand-white-muted/50 text-xs">MXN</span>
+        </div>
+        <p class="text-xs text-brand-white-muted/40">10+ bailarines · 3:00–4:00 min</p>
+      </div>
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-6 border border-brand-white-faint text-center">
+        <p class="text-[10px] text-brand-white-muted/40 font-extrabold uppercase tracking-[0.2em] mb-2">Colegial</p>
+        <div class="flex items-baseline justify-center gap-1 mb-2">
+          <span class="font-title text-4xl font-black text-brand-white">$500</span>
+          <span class="text-brand-white-muted/50 text-xs">MXN</span>
+        </div>
+        <p class="text-xs text-brand-white-muted/40">Estudiantes inscritos · 3:00–4:00 min</p>
+      </div>
+    </div>
+    <p class="reveal text-center text-xs text-brand-white-muted/40 mt-8">
+      No reembolsable, salvo causa atribuible a la organización · 
+      <a href="https://wa.me/526622224220" class="text-brand-lime hover:underline">¿Dudas? Escríbenos</a>
+    </p>
+  </section>
+
+  <!-- Premiación -->
+  <section id="premiacion" class="py-16 md:py-24 px-6 md:px-16 max-w-6xl mx-auto">
+    <div class="text-center mb-14">
+      <p class="reveal text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.25em] mb-3">Premiación</p>
+      <h2 class="reveal reveal-d1 font-title text-3xl md:text-5xl font-black text-brand-white tracking-tight">
+        Premios y <span class="italic-display italic text-brand-lime font-light">reconocimientos</span>
+      </h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl p-8 border border-brand-white-faint">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 6 9 6 9zm0 0h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm0 0v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9"/></svg>
+          </div>
+          <h3 class="font-title text-xl font-bold text-brand-white">Medallas y Trofeos</h3>
+        </div>
+        <div class="space-y-4">
+          <div class="bg-brand-lime/5 rounded-xl p-4 border border-brand-lime/20">
+            <p class="font-bold text-brand-white mb-1">Solista / Dúo / Tercia</p>
+            <p class="text-sm text-brand-white-muted/60">Medalla Oro, Plata y Bronce para los 3 primeros lugares.</p>
+          </div>
+          <div class="bg-brand-lime/5 rounded-xl p-4 border border-brand-lime/20">
+            <p class="font-bold text-brand-white mb-1">Grupo Pequeño / Grande / Colegial</p>
+            <p class="text-sm text-brand-white-muted/60">Trofeo 1°, 2° y 3° lugar.</p>
+          </div>
+          <div class="bg-brand-lime/5 rounded-xl p-4 border border-brand-lime/20">
+            <p class="font-bold text-brand-white mb-1">Campeón Absoluto</p>
+            <p class="text-sm text-brand-white-muted/60">La rutina con la calificación más alta del evento completo.</p>
+          </div>
+        </div>
+      </div>
+      <div class="reveal reveal-d1 bg-brand-dark-elevated/50 rounded-2xl p-8 border border-brand-white-faint">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-full bg-brand-lime/10 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <h3 class="font-title text-xl font-bold text-brand-white">Becas</h3>
+        </div>
+        <div class="space-y-4">
+          <div class="bg-brand-lime/5 rounded-xl p-4 border border-brand-lime/20">
+            <p class="font-bold text-brand-white mb-1">Invitaciones</p>
+            <p class="text-sm text-brand-white-muted/60">Invitaciones a eventos y festivales de danza según convenios vigentes.</p>
+          </div>
+          <div class="bg-brand-lime/5 rounded-xl p-4 border border-brand-lime/20">
+            <p class="font-bold text-brand-white mb-1">Descuentos</p>
+            <p class="text-sm text-brand-white-muted/60">Descuentos en escuelas y compañías aliadas para participantes destacados.</p>
+          </div>
+          <div class="bg-brand-lime/5 rounded-xl p-4 border border-brand-lime/20">
+            <p class="font-bold text-brand-white mb-1">Apoyos</p>
+            <p class="text-sm text-brand-white-muted/60">Apoyos según convenios vigentes con patrocinadores y aliados.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-16 md:py-24 px-6 md:px-16">
+    <div class="max-w-3xl mx-auto bg-brand-dark-elevated/50 rounded-[2rem] p-10 md:p-14 border border-brand-white-faint text-center">
+      <h2 class="reveal font-title text-3xl md:text-5xl font-black text-brand-white tracking-tight mb-4">¿Listo para <span class="italic-display italic text-brand-lime font-light">competir</span>?</h2>
+      <p class="reveal reveal-d1 text-brand-white-muted/50 text-base md:text-lg mb-8">Únete a la primera edición de Desert Dance Competition. Las plazas son limitadas.</p>
+      <a href="index.html#registro" class="reveal reveal-d2 inline-block bg-brand-lime text-brand-dark px-8 py-4 rounded-full font-extrabold text-sm tracking-[0.1em] uppercase shadow-[0_8px_30px_rgba(216,231,35,0.3)] hover:bg-brand-lime-hover hover:-translate-y-0.5 transition-all duration-400">Registrar mi equipo</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-brand-white-faint px-6 md:px-16 py-12 md:py-16 max-w-7xl mx-auto mt-4">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+      <div>
+        <img src="assets/logos/horizontal_compact.svg" alt="Desert Dance" class="h-10 w-auto mb-4">
+        <p class="text-xs text-brand-white-muted/40 leading-relaxed">Competencia de Danza y Expresión Corporal en Caborca, Sonora.</p>
+        <div class="flex gap-4 mt-4">
+          <a href="#" class="text-brand-white-muted/30 hover:text-brand-lime transition-colors" aria-label="Instagram">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
+          </a>
+          <a href="#" class="text-brand-white-muted/30 hover:text-brand-lime transition-colors" aria-label="Facebook">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+          <a href="#" class="text-brand-white-muted/30 hover:text-brand-lime transition-colors" aria-label="TikTok">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1 0-5.78 2.92 2.92 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 3 15.57 6.33 6.33 0 0 0 9.37 22a6.33 6.33 0 0 0 6.38-6.22V9.4a8.16 8.16 0 0 0 4.84 1.58V7.53a4.85 4.85 0 0 1-1-.84z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div>
+        <h4 class="font-title font-bold text-brand-white text-sm mb-4">Evento</h4>
+        <ul class="space-y-2 text-xs text-brand-white-muted/40">
+          <li><a href="index.html#fechas" class="hover:text-brand-lime transition-colors">Fechas</a></li>
+          <li><a href="index.html#categorias" class="hover:text-brand-lime transition-colors">Modalidades</a></li>
+          <li><a href="bases.html" class="hover:text-brand-lime transition-colors">Bases del concurso</a></li>
+          <li><a href="puntos.html" class="hover:text-brand-lime transition-colors">Sistema de evaluación</a></li>
+          <li><a href="informacion.html" class="hover:text-brand-lime transition-colors">Cómo llegar y hospedaje</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-title font-bold text-brand-white text-sm mb-4">Información</h4>
+        <ul class="space-y-2 text-xs text-brand-white-muted/40">
+          <li><a href="bases.html#cuotas" class="hover:text-brand-lime transition-colors">Cuotas de inscripción</a></li>
+          <li><a href="bases.html#requisitos" class="hover:text-brand-lime transition-colors">Requisitos</a></li>
+          <li><a href="informacion.html#faq" class="hover:text-brand-lime transition-colors">Preguntas frecuentes</a></li>
+          <li><a href="index.html#registro" class="hover:text-brand-lime transition-colors">Registro</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-title font-bold text-brand-white text-sm mb-4">Contacto</h4>
+        <ul class="space-y-3 text-xs text-brand-white-muted/40">
+          <li class="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+            WhatsApp: (662) 222 4220
+          </li>
+          <li class="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            info@desertdance.mx
+          </li>
+          <li class="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Caborca, Sonora
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pt-8 border-t border-brand-white-faint flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-brand-white-muted/25">
+      <p>&copy; Desert Dance 2026. Todos los derechos reservados.</p>
+      <div class="flex gap-4">
+        <a href="#" class="hover:text-brand-lime transition-colors">Términos</a>
+        <a href="#" class="hover:text-brand-lime transition-colors">Privacidad</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const btn = document.getElementById('mobile-menu-btn');
+      const menu = document.getElementById('mobile-menu');
+      if (btn && menu) {
+        btn.addEventListener('click', function () {
+          menu.classList.toggle('hidden');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
