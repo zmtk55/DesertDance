@@ -1077,8 +1077,10 @@
     });
   }
 
+const catById = (id) => state.categories.find(c => c.id === id) || null;
+
   function openTeamModal(team = null) {
-    $('team-modal-title').textContent = team ? 'Editar equipo' : 'Agregar equipo';
+    $('team-modal-title').textContent = team ? 'Editar equipo' : ' agregar equipo';
     $('tf-id').value = team?.id || '';
     $('tf-name').value = team?.name || '';
     $('tf-city').value = team?.origin_city || '';
@@ -1088,22 +1090,31 @@
     $('tf-schedule').value = team?.scheduled_time ? team.scheduled_time.slice(0, 16) : '';
     $('tf-status').value = team?.status || 'pending';
     $('tf-notes').value = team?.notes || '';
-    
+
+    // Dropdown de categorías: opcional, con los valores del catálogo de la BD.
     const catSel = $('tf-category');
-    catSel.innerHTML = '<option value="">Sin categoría</option>' + state.categories.map(c => `<option ${team?.category === c.name ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
-    if (team?.category) catSel.value = team.category;
-    
+    catSel.innerHTML = '<option value="">— Sin categoría —</option>'
+      + state.categories.map(c => `<option value="${esc(c.id)}" ${team?.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    if (team?.category_id) catSel.value = team.category_id;
+
     openModal('team');
   }
 
-  function openDancerModal(teamId, dancer = null) {
-    $('dancer-modal-title').textContent = dancer ? 'Editar bailarín' : 'Agregar bailarín';
+function openDancerModal(teamId, dancer = null) {
+    $('dancer-modal-title').textContent = dancer ? 'Editar bailarín' : ' agregar bailarín';
     $('df-id').value = dancer?.id || '';
     $('df-team-id').value = teamId;
     $('df-name').value = dancer?.full_name || '';
     $('df-technique').value = dancer?.technique || '';
     $('df-division').value = dancer?.division || '';
     $('df-routine').value = dancer?.routine_title || '';
+
+    // Dropdown de categorías: opcional, con los valores del catálogo de la BD.
+    const catSel = $('df-category');
+    catSel.innerHTML = '<option value="">— Sin categoría —</option>'
+      + state.categories.map(c => `<option value="${esc(c.id)}" ${dancer?.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    if (dancer?.category_id) catSel.value = dancer.category_id;
+
     openModal('dancer');
   }
 
@@ -1204,7 +1215,7 @@
       contact_name: $('tf-contact').value.trim(),
       contact_phone: $('tf-phone').value.trim(),
       contact_email: $('tf-email').value.trim(),
-      category: $('tf-category').value,
+      category_id: $('tf-category').value || null,
       scheduled_time: $('tf-schedule').value ? new Date($('tf-schedule').value).toISOString() : null,
       status: $('tf-status').value,
       notes: $('tf-notes').value.trim()
