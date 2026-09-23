@@ -136,10 +136,9 @@
 
   <!-- Hero -->
   <section id="main-content" class="relative h-screen w-full overflow-hidden flex items-end bg-brand-dark">
-    <picture>
-      <source type="image/webp" srcset="assets/images/Backgroundimage-480.webp 480w, assets/images/Backgroundimage-800.webp 800w, assets/images/Backgroundimage-1200.webp 1200w, assets/images/Backgroundimage-1920.webp 1920w, assets/images/Backgroundimage.webp 2784w" sizes="100vw">
-      <img src="assets/images/Backgroundimage.png" alt="Competencia de danza Desert Dance en Caborca, Sonora" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.05]" loading="eager" width="2784" height="1504">
-    </picture>
+    <div id="hero-track" class="absolute inset-0">
+      <!-- Las diapositivas se inyectan por JS desde la BD (public.carousel_images) -->
+    </div>
     <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/50 to-transparent"></div>
     <div class="absolute inset-0 bg-gradient-to-r from-brand-dark/70 via-transparent to-brand-dark/50"></div>
     <div class="relative z-10 px-6 md:px-16 pb-24 md:pb-32 max-w-6xl mx-auto w-full">
@@ -161,6 +160,13 @@
         <div><p class="font-title text-5xl md:text-7xl font-black text-brand-white leading-none">6</p><p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] mt-2">Géneros</p></div>
       </div>
     </div>
+    <button id="hero-prev" type="button" aria-label="Anterior" class="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-brand-dark/80 backdrop-blur border border-brand-white-faint text-brand-white hover:border-brand-lime/50 hover:text-brand-lime transition-all items-center justify-center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button id="hero-next" type="button" aria-label="Siguiente" class="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-brand-dark/80 backdrop-blur border border-brand-white-faint text-brand-white hover:border-brand-lime/50 hover:text-brand-lime transition-all items-center justify-center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div id="hero-dots" class="absolute bottom-6 left-0 right-0 z-30 flex justify-center gap-2"></div>
   </section>
 
   <!-- Dates -->
@@ -470,6 +476,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
+  <script src="js/hero-carousel.js"></script>
   <script src="js/typesafe.js"></script>
   <script src="js/app.js"></script>
   <script>

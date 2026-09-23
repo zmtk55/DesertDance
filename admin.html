@@ -137,6 +137,10 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Reportes
         </a>
+        <a href="#carousel" data-nav="carousel" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="9 7 9 10 15 10 15 7"/></svg>
+          Carrusel
+        </a>
       </nav>
 
       <!-- Acceso rápido -->
@@ -447,11 +451,74 @@
           <button type="submit" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-3 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
         </div>
       </form>
+</div>
     </div>
-  </div>
 
-  <!-- Toast -->
-  <div id="toast" class="hidden fixed bottom-6 right-6 z-[70] toast"></div>
+    <!-- Carrusel del landing -->
+    <section id="carousel" class="py-16 md:py-24 px-6 md:px-16 max-w-7xl mx-auto">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Fotos del <span class="italic-display italic text-brand-lime font-light">landing</span></h2>
+          <p class="text-brand-white-muted/40 text-xs mt-1">Imágenes que se reproducen en el hero de Desert Dance. Sube tantas como quieras; la primera es la que se muestra al cargar.</p>
+        </div>
+        <button data-action="add-carousel" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Subir foto
+        </button>
+      </div>
+      <div id="carousel-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Se inyecta por JS -->
+      </div>
+      <p id="carousel-empty" class="text-center py-16 text-brand-white-muted/30 text-sm">Aún no hay fotos en el carrusel. Haz clic en "Subir foto".</p>
+    </section>
+
+    <!-- Modal: subir/Editar foto del carrusel -->
+    <div id="carousel-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal="carousel"></div>
+      <div class="relative bg-brand-dark-elevated rounded-3xl border border-brand-white-faint p-6 w-full max-w-lg shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+        <div class="flex items-center justify-between mb-6">
+          <h3 id="carousel-modal-title" class="font-title text-xl font-black text-brand-white">Subir foto</h3>
+          <button data-close-modal="carousel" class="text-brand-white-muted/40 hover:text-brand-white transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="carousel-form" class="space-y-4" enctype="multipart/form-data">
+          <input type="hidden" id="cf-id">
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Foto <span class="text-brand-lime">*</span></label>
+            <input id="cf-file" name="file" type="file" accept="image/*" required class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-lime file:text-brand-dark file:font-extrabold file:text-xs file:uppercase file:tracking-[0.1em] hover:file:bg-brand-lime-hover focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Título (leyenda)</label>
+            <input id="cf-title" type="text" placeholder="Ej. Competencia de danza urbana" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Texto pequeño</label>
+            <input id="cf-caption" type="text" placeholder="Ej. Caborca, Sonora" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Orden</label>
+              <input id="cf-sort" type="number" min="0" value="0" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Estado</label>
+              <select id="cf-active" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button type="button" data-close-modal="carousel" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-sm py-3 rounded-xl hover:text-brand-white transition-colors">cancelar</button>
+            <button type="submit" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-3 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 z-[70] toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>

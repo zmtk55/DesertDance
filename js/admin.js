@@ -30,6 +30,7 @@
     dancersByTeam: {},
     teamData: {},
     categories: [],
+    carousel: [],
     eventSettings: {},
     adminUsers: [],
     filtered: [],
@@ -96,24 +97,27 @@
   // ============================================================
   // DATA FETCHING
   // ============================================================
-  async function fetchAll() {
-    const [teams, categories, settings, admins] = await Promise.all([
+async function fetchAll() {
+    const [teams, categories, settings, admins, carousel] = await Promise.all([
       supabase.from('teams').select('*, participants(id, full_name, technique, division, routine_title, email, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
-      supabase.from('admin_users').select('*')
+      supabase.from('admin_users').select('*'),
+      supabase.from('carousel_images').select('*').order('sort_order', { ascending: true })
     ]);
-    
+
     if (teams.error) throw teams.error;
     state.teams = teams.data || [];
-    
+
     state.categories = (categories.data || []).sort((a, b) => a.sort_order - b.sort_order);
-    
+
     state.eventSettings = {};
     (settings.data || []).forEach(s => { state.eventSettings[s.key] = s.value; });
-    
+
     state.adminUsers = admins.data || [];
-    
+
+    state.carousel = carousel.data || [];
+
     for (const t of state.teams) {
       state.dancersByTeam[t.id] = t.participants || [];
     }
@@ -278,6 +282,7 @@
     if (parts[0] === 'teams') return { view: 'teams' };
     if (parts[0] === 'payments-global') return { view: 'payments-global' };
     if (parts[0] === 'categories') return { view: 'categories' };
+    if (parts[0] === 'carousel') return { view: 'carousel' };
     if (parts[0] === 'settings') return { view: 'settings' };
     if (parts[0] === 'admins') return { view: 'admins' };
     if (parts[0] === 'reports') return { view: 'reports' };
@@ -301,6 +306,7 @@
         case 'settings': renderSettings(main); break;
         case 'admins': renderAdmins(main); break;
         case 'reports': renderReports(main); break;
+        case 'carousel': renderCarousel(); break;
       }
     } catch (err) {
       console.error(err);
@@ -1180,6 +1186,18 @@ function openDancerModal(teamId, dancer = null) {
     
     try {
       switch (action) {
+        case 'add-carousel': openCarouselModal(); break;
+        case 'edit-carousel': { const c = state.carousel.find(x => x.id === id); if (c) openCarouselModal(c); break; }
+        case 'delete-carousel': openDeleteModal('¿Eliminar foto?', 'Esta acción no se puede deshacer.', async () => { await deleteCarousel(id); state.carousel = state.carousel.filter(x => x.id !== id); navigate(); toast('Foto eliminada'); }); break;
+        case 'toggle-carousel': {
+          const c = state.carousel.find(x => x.id === id); if (!c) break;
+          const next = !(c.is_active !== false);
+          await updateCarousel(id, { is_active: next });
+          c.is_active = next;
+          renderCarousel();
+          toast(next ? 'Foto activada' : 'Foto desactivada');
+          break;
+        }
         case 'add-team': openTeamModal(); break;
         case 'edit-team': { const t = state.teams.find(x => x.id === id); if (t) openTeamModal(t); break; }
         case 'delete-team': { const t = state.teams.find(x => x.id === id); openDeleteModal('¿Eliminar equipo?', `Vas a eliminar a ${t?.name || 'este equipo'} y todos sus datos.`, async () => { await deleteTeam(id); state.teams = state.teams.filter(x => x.id !== id); delete state.dancersByTeam[id]; delete state.teamData[id]; navigate(); }); break; }
@@ -1237,11 +1255,44 @@ function openDancerModal(teamId, dancer = null) {
     } catch (err) { toast(err.message, false); }
   });
 
-  // Dancer form
-  $('dancer-form').addEventListener('submit', async (e) => {
+  // Carousel form
+  $('carousel-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const id = $('df-id').value;
-    const teamId = $('df-team-id').value;
+    const id = $('cf-id').value;
+    const file = $('cf-file').files[0];
+    let data = {
+      title: $('cf-title').value.trim(),
+      caption: $('cf-caption').value.trim(),
+      sort_order: parseInt($('cf-sort').value, 10) || 0,
+      is_active: $('cf-active').value === 'true'
+    };
+    try {
+      if (file) {
+        const { path, url } = await uploadCarouselImage(file);
+        data.image_path = path;
+        data.image_url = url;
+      }
+      if (id) {
+        await updateCarousel(id, data);
+        const c = state.carousel.find(x => x.id === id);
+        if (c) Object.assign(c, data);
+        toast('Foto actualizada');
+      } else {
+        if (!file) { toast('Debes seleccionar una foto', false); return; }
+        const newId = await createCarousel(data);
+        state.carousel.unshift({ id: newId, ...data });
+        toast('Foto subida');
+      }
+      openModal(null);
+      navigate();
+    } catch (err) { toast(err.message, false); }
+  });
+  
+    // Dancer form
+    $('dancer-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = $('df-id').value;
+      const teamId = $('df-team-id').value;
     const team = state.teams.find(t => t.id === teamId);
     const data = {
       team_id: teamId,
@@ -1462,6 +1513,91 @@ function openDancerModal(teamId, dancer = null) {
     a.click();
     URL.revokeObjectURL(a.href);
     toast('CSV exportado');
+  }
+
+  // ============================================================
+  // CAROUSEL (fotos del landing)
+  // ============================================================
+  async function uploadCarouselImage(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `carousel/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('carousel').upload(path, file, { upsert: false });
+    if (upErr) throw upErr;
+    const { data } = supabase.storage.from('carousel').getPublicUrl(path);
+    return { path, url: data.publicUrl };
+  }
+
+  async function createCarousel(data) {
+    const { error } = await supabase.from('carousel_images').insert([data]);
+    if (error) throw error;
+  }
+  async function updateCarousel(id, data) {
+    const { error } = await supabase.from('carousel_images').update(data).eq('id', id);
+    if (error) throw error;
+  }
+  async function deleteCarousel(id) {
+    const { error } = await supabase.from('carousel_images').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  function renderCarousel() {
+    const list = $('carousel-list');
+    const empty = $('carousel-empty');
+    if (!state.carousel.length) { if (empty) empty.classList.remove('hidden'); if (list) list.innerHTML = ''; return; }
+    if (empty) empty.classList.add('hidden');
+    list.innerHTML = state.carousel.map(c => `
+      <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden flex flex-col">
+        <div class="aspect-[4/3] overflow-hidden bg-brand-dark/60">
+          <img src="${esc(c.image_url)}" alt="${esc(c.title || '')}" class="w-full h-full object-cover">
+        </div>
+        <div class="p-4 space-y-3">
+          <input type="text" data-c-title="${c.id}" value="${esc(c.title || '')}" placeholder="Título (opcional)" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
+          <input type="text" data-c-caption="${c.id}" value="${esc(c.caption || '')}" placeholder="Texto pequeño (opcional)" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
+          <div class="flex items-center gap-2">
+            <input type="number" data-c-sort="${c.id}" value="${c.sort_order || 0}" min="0" class="w-20 bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            <button data-action="toggle-carousel" data-id="${c.id}" data-field="is_active" class="text-[10px] font-extrabold uppercase tracking-[0.1em] px-2 py-1.5 rounded-lg ${c.is_active !== false ? 'bg-brand-lime/15 text-brand-lime' : 'bg-brand-white-faint/40 text-brand-white-muted/60'}">Activo</button>
+            <button data-action="edit-carousel" data-id="${c.id}" class="ml-auto text-xs font-bold text-brand-white-muted/60 hover:text-brand-lime transition-colors">Editar</button>
+            <button data-action="delete-carousel" data-id="${c.id}" class="text-xs font-bold text-red-400/70 hover:text-red-400 transition-colors">Eliminar</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+    // Editar inline: título, leyenda y orden
+    list.querySelectorAll('[data-c-title]').forEach(inp => {
+      inp.addEventListener('change', async () => {
+        const id = inp.dataset.cTitle;
+        await updateCarousel(id, { title: inp.value.trim() });
+        const c = state.carousel.find(x => x.id === id); if (c) c.title = inp.value.trim();
+      });
+    });
+    list.querySelectorAll('[data-c-caption]').forEach(inp => {
+      inp.addEventListener('change', async () => {
+        const id = inp.dataset.cCaption;
+        await updateCarousel(id, { caption: inp.value.trim() });
+        const c = state.carousel.find(x => x.id === id); if (c) c.caption = inp.value.trim();
+      });
+    });
+    list.querySelectorAll('[data-c-sort]').forEach(inp => {
+      inp.addEventListener('change', async () => {
+        const id = inp.dataset.cSort;
+        const v = parseInt(inp.value, 10) || 0;
+        await updateCarousel(id, { sort_order: v });
+        const c = state.carousel.find(x => x.id === id); if (c) c.sort_order = v;
+        state.carousel.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        renderCarousel();
+      });
+    });
+  }
+
+function openCarouselModal(img = null) {
+    $('carousel-modal-title').textContent = img ? 'Editar foto' : 'Subir foto';
+    $('cf-id').value = img?.id || '';
+    $('cf-file').value = '';
+    $('cf-title').value = img?.title || '';
+    $('cf-caption').value = img?.caption || '';
+    $('cf-sort').value = img?.sort_order || 0;
+    $('cf-active').value = img?.is_active !== false ? 'true' : 'false';
+    openModal('carousel');
   }
 
   // ============================================================
