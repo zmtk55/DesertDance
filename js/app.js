@@ -278,7 +278,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const content = item.querySelector('.faq-content');
     const icon = toggle.querySelector('.faq-icon');
     if (!content) return;
-    content.classList.toggle('hidden');
+    const isOpen = content.classList.toggle('hidden');
+    toggle.setAttribute('aria-expanded', String(!isOpen));
     if (icon) icon.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
   });
 

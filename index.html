@@ -5,6 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Desert Dance Competition — Primera Edición. 27 y 28 de noviembre de 2026. Auditorio Cívico Municipal, H. Caborca, Sonora. Registro abierto.">
   <title>Desert Dance Competition — Primera Edición 2026</title>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "DanceEvent",
+      "name": "Desert Dance Competition",
+      "description": "Competencia de danza en el Auditorio Cívico Municipal de Caborca, Sonora. Solistas, dúos, trias, grupos y categorías colegiales.",
+      "startDate": "2026-11-27",
+      "endDate": "2026-11-28",
+      "location": {
+        "@type": "Place",
+        "name": "Auditorio Cívico Municipal",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Caborca",
+          "addressRegion": "Sonora",
+          "addressCountry": "MX"
+        }
+      },
+      "organizer": {
+        "@type": "Organization",
+        "name": "Desert Dance"
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": "https://desertdance.mx/#registro"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+52-662-222-4220",
+        "contactType": "customer service"
+      }
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;1,9..40,400&family=Jost:wght@300;400;600;900&display=swap" rel="stylesheet">
@@ -53,6 +86,7 @@
   <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png">
 </head>
 <body class="antialiased overflow-x-hidden">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-0 focus:left-0 focus:z-[100] focus:bg-brand-lime focus:text-brand-dark focus:px-4 focus:py-2 focus:rounded-br-lg">Saltar al contenido principal</a>
   <script>
     // Evita que el navegador restaure la posición de scroll anterior al recargar
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -83,30 +117,29 @@
           Admin
         </a>
         <a href="#registro" class="px-5 py-2.5 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold uppercase tracking-[0.12em] hover:bg-brand-lime-hover transition-colors duration-300">Regístrate</a>
-        <button id="mobile-menu-btn" class="lg:hidden p-2 text-brand-white-muted/60 hover:text-brand-white">
+        <button id="mobile-menu-btn" class="lg:hidden p-3 min-h-[44px] min-w-[44px] text-brand-white-muted/60 hover:text-brand-white">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
       </div>
     </div>
-    <div id="mobile-menu" class="hidden lg:hidden border-t border-brand-white-faint bg-brand-dark/95 backdrop-blur-xl">
-      <div class="px-6 py-4 space-y-3">
-        <a href="#fechas" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Fechas</a>
-        <a href="#categorias" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Modalidades</a>
-        <a href="bases.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Bases</a>
-        <a href="puntos.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Evaluación</a>
-        <a href="informacion.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Visítanos</a>
-        <a href="login.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-2">Admin</a>
+<div id="mobile-menu" class="hidden lg:hidden border-t border-brand-white-faint bg-brand-dark/95 backdrop-blur-xl">
+      <div class="px-6 py-3 space-y-1">
+        <a href="#fechas" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-3 min-h-[44px] flex items-center">Fechas</a>
+        <a href="#categoria" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-3 min-h-[44px] flex items-center">Modalidades</a>
+        <a href="bases.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-3 min-h-[44px] flex items-center">Bases</a>
+        <a href="puntos.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-3 min-h-[44px] flex items-center">Evaluación</a>
+        <a href="informacion.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-3 min-h-[44px] flex items-center">Visítanos</a>
+        <a href="login.html" class="block text-brand-white-muted text-sm font-medium hover:text-brand-lime transition-colors py-3 min-h-[44px] flex items-center">Admin</a>
       </div>
     </div>
   </nav>
 
   <!-- Hero -->
-  <section class="relative h-screen w-full overflow-hidden flex items-end bg-brand-dark">
-    <img
-      src="assets/images/Backgroundimage.png"
-      alt="Competencia de danza Desert Dance en Caborca, Sonora"
-      class="absolute inset-0 w-full h-full object-cover object-center scale-[1.05]"
-    >
+  <section id="main-content" class="relative h-screen w-full overflow-hidden flex items-end bg-brand-dark">
+    <picture>
+      <source type="image/webp" srcset="assets/images/Backgroundimage-480.webp 480w, assets/images/Backgroundimage-800.webp 800w, assets/images/Backgroundimage-1200.webp 1200w, assets/images/Backgroundimage-1920.webp 1920w, assets/images/Backgroundimage.webp 2784w" sizes="100vw">
+      <img src="assets/images/Backgroundimage.png" alt="Competencia de danza Desert Dance en Caborca, Sonora" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.05]" loading="eager" width="2784" height="1504">
+    </picture>
     <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/50 to-transparent"></div>
     <div class="absolute inset-0 bg-gradient-to-r from-brand-dark/70 via-transparent to-brand-dark/50"></div>
     <div class="relative z-10 px-6 md:px-16 pb-24 md:pb-32 max-w-6xl mx-auto w-full">

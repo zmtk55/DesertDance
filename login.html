@@ -65,6 +65,9 @@
           class="w-full bg-brand-lime text-brand-dark font-extrabold text-sm tracking-[0.12em] uppercase py-4 rounded-xl hover:bg-brand-lime-hover shadow-[0_0_30px_rgba(216,231,35,0.25)] hover:shadow-[0_0_45px_rgba(216,231,35,0.4)] hover:-translate-y-0.5 transition-all duration-300">
           Iniciar Sesión
         </button>
+        <div class="flex items-center justify-between mt-3">
+          <a href="#" class="text-xs text-brand-white-muted/40 hover:text-brand-lime transition-colors" id="recover-link">¿Olvidaste tu contraseña?</a>
+        </div>
       </form>
 
       <a href="index.html" class="block text-center mt-8 text-brand-white-muted/40 text-xs hover:text-brand-lime transition-colors tracking-wide">← Volver al sitio</a>
@@ -105,6 +108,36 @@
 
         window.location.href = 'admin.html';
       });
+
+      // Recuperación de contraseña
+      const recoverLink = document.getElementById('recover-link');
+      if (recoverLink) {
+        recoverLink.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('email').value.trim();
+          if (!email) {
+            errorMsg.textContent = 'Escribe tu correo para recuperar la contraseña.';
+            errorMsg.classList.remove('hidden');
+            return;
+          }
+          try {
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: window.location.origin + '/login.html'
+            });
+            if (resetError) {
+              errorMsg.textContent = 'No pudimos enviar el enlace. Intenta de nuevo.';
+            } else {
+              errorMsg.textContent = '';
+              errorMsg.classList.add('hidden');
+              recoverLink.textContent = 'Revisa tu correo para restablecer la contraseña.';
+              recoverLink.classList.add('text-brand-lime');
+            }
+          } catch (err) {
+            errorMsg.textContent = 'Error inesperado. Intenta de nuevo.';
+          }
+          errorMsg.classList.remove('hidden');
+        });
+      }
     });
   </script>
 </body>

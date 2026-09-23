@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Información práctica de Desert Dance Competition: hoteles, cómo llegar, preguntas frecuentes. Primera edición, 27 y 28 de noviembre de 2026, H. Caborca, Sonora.">
   <title>Visítanos — Desert Dance Competition 2026</title>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Visítanos — Desert Dance Competition",
+      "about": {
+        "@type": "DanceEvent",
+        "name": "Desert Dance Competition",
+        "startDate": "2026-11-27",
+        "endDate": "2026-11-28",
+        "location": {
+          "@type": "Place",
+          "name": "Auditorio Cívico Municipal",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Caborca",
+            "addressRegion": "Sonora",
+            "addressCountry": "MX"
+          }
+        }
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Desert Dance Competition"
+      }
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;1,9..40,400&family=Jost:wght@300;400;600;900&display=swap" rel="stylesheet">
@@ -53,6 +80,7 @@
   <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png">
 </head>
 <body class="antialiased overflow-x-hidden">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-0 focus:left-0 focus:z-[100] focus:bg-brand-lime focus:text-brand-dark focus:px-4 focus:py-2 focus:rounded-br-lg">Saltar al contenido principal</a>
 
   <!-- Nav -->
   <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-brand-dark/60 border-b border-brand-white-faint">
@@ -73,7 +101,7 @@
           Admin
         </a>
         <a href="index.html#registro" class="px-5 py-2.5 rounded-full bg-brand-lime text-brand-dark text-xs font-extrabold uppercase tracking-[0.12em] hover:bg-brand-lime-hover transition-colors duration-300">Regístrate</a>
-        <button id="mobile-menu-btn" class="lg:hidden p-2 text-brand-white-muted/60 hover:text-brand-white">
+        <button id="mobile-menu-btn" class="lg:hidden p-3 min-h-[44px] min-w-[44px] text-brand-white-muted/60 hover:text-brand-white">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
       </div>
@@ -91,8 +119,8 @@
   </nav>
 
   <!-- Page Header -->
-  <header class="relative pt-40 pb-20 md:pt-52 md:pb-28 px-6 md:px-16 overflow-hidden">
-    <img src="assets/images/Backgroundimage.png" alt="" class="absolute inset-0 w-full h-full object-cover object-center opacity-25">
+  <header id="main-content" class="relative pt-40 pb-20 md:pt-52 md:pb-28 px-6 md:px-16 overflow-hidden">
+    <img src="assets/images/Backgroundimage.webp" alt="" class="absolute inset-0 w-full h-full object-cover object-center opacity-25" loading="lazy" width="2784" height="1504" srcset="assets/images/Backgroundimage-480.webp 480w, assets/images/Backgroundimage-800.webp 800w, assets/images/Backgroundimage-1200.webp 1200w, assets/images/Backgroundimage-1920.webp 1920w, assets/images/Backgroundimage.webp 2784w" sizes="100vw">
     <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/70 to-brand-dark/30"></div>
     <div class="relative z-10 max-w-4xl mx-auto text-center">
       <p class="reveal text-brand-lime text-[11px] md:text-xs font-extrabold tracking-[0.3em] uppercase mb-6">Información práctica · 2026</p>
@@ -187,7 +215,7 @@
     <div class="reveal mt-8 text-center">
       <p class="text-sm text-brand-white-muted/50">
         ¿Necesitas ayuda con tu hospedaje? 
-        <a href="https://wa.me/526622224220" class="text-brand-lime hover:underline font-bold">Escríbenos al WhatsApp</a>
+        <a href="https://wa.me/526622224220" target="_blank" rel="noopener noreferrer" class="text-brand-lime hover:underline font-bold">Escríbenos al WhatsApp</a>
       </p>
     </div>
   </section>
@@ -241,16 +269,20 @@
       </div>
       <div class="reveal reveal-d1">
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden h-full">
-          <div class="h-64 bg-brand-white-faint flex items-center justify-center">
-            <div class="text-center">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-white-muted/20 mx-auto mb-4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <p class="text-sm text-brand-white-muted/40">Caborca, Sonora, México</p>
-            </div>
-          </div>
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3593!2m2!1d-110.275!2d30.73!3m2!1i1024!2i768!3f0!3f0!3m2s0x85d8c1c1c1c1c1c1:0x0!3m2!1sen!2smx!4v1700000000!5m0!5e0!3m2!1ses!2smx"
+            width="100%"
+            height="320"
+            style="border:0"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Mapa de la ubicación del Auditorio Cívico Municipal, Caborca, Sonora">
+          </iframe>
           <div class="p-6">
             <h4 class="font-title font-bold text-brand-white mb-3">Venue del Evento</h4>
             <p class="text-sm text-brand-white-muted/60 mb-4">Auditorio Cívico Municipal<br>H. Caborca, Sonora</p>
-            <a href="https://maps.google.com/?q=Auditorio+Civico+Municipal+Caborca+Sonora" target="_blank" class="inline-flex items-center gap-2 text-brand-lime text-sm font-bold hover:underline">
+            <a href="https://maps.google.com/?q=Auditorio+Civico+Municipal+Caborca+Sonora" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-brand-lime text-sm font-bold hover:underline">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               Abrir en Google Maps
             </a>
@@ -268,53 +300,54 @@
         Preguntas <span class="italic-display italic text-brand-lime font-light">frecuentes</span>
       </h2>
     </div>
-    <div class="space-y-4">
-      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
-        <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4">
-          <span class="font-title font-bold text-brand-white">¿Cuántos bailarines necesito para inscribirme?</span>
-          <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-content hidden px-6 pb-5">
-          <p class="text-sm text-brand-white-muted/60 leading-relaxed">Depende de la modalidad: Solista (1), Dúo (2), Tercia (3), Grupo Pequeño (4–9) o Grupo Grande (10+). También existe la categoría Colegial para estudiantes inscritos.</p>
+<div class="space-y-4">
+      <div class="space-y-4">
+        <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
+          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
+            <span class="font-title font-bold text-brand-white">¿Cuántos bailarines necesito para inscribirme?</span>
+            <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-content hidden px-6 pb-5">
+            <p class="text-sm text-brand-white-muted/60 leading-relaxed">Depende de la modalidad: Solista (1), Dúo (2), Tercia (3), Grupo Pequeño (4–9) o Grupo Grande (10+). También existe la categoría Colegial para estudiantes inscritos.</p>
+          </div>
+        </div>
+        <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
+          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
+            <span class="font-title font-bold text-brand-white">¿Qué géneros de danza se aceptan?</span>
+            <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-content hidden px-6 pb-5">
+            <p class="text-sm text-brand-white-muted/60 leading-relaxed">Ballet, Danza Contemporánea, Jazz, Urbano, Poms, Open (fusión de estilos: Ritmos Latinos, Folclore Mexicano, Country, Porras, etc.) y Exhibición (demostrativo).</p>
+          </div>
+        </div>
+        <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
+          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
+            <span class="font-title font-bold text-brand-white">¿Cuánto dura cada rutina?</span>
+            <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-content hidden px-6 pb-5">
+            <p class="text-sm text-brand-white-muted/60 leading-relaxed">Solista, Dúo, Tercia y Grupo Pequeño: máximo 3 minutos. Grupo Grande y Colegial: 3 a 4 minutos.</p>
+          </div>
+        </div>
+        <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
+          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
+            <span class="font-title font-bold text-brand-white">¿Qué documentos necesito para inscribirme?</span>
+            <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-content hidden px-6 pb-5">
+            <p class="text-sm text-brand-white-muted/60 leading-relaxed">Formulario completo, comprobante de pago, pista musical, aceptación del reglamento y carta responsiva del entrenador. Para Colegial: constancia oficial con CURP y datos del alumno.</p>
+          </div>
+        </div>
+        <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
+          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
+            <span class="font-title font-bold text-brand-white">¿Se puede reembolsar la inscripción?</span>
+            <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-content hidden px-6 pb-5">
+            <p class="text-sm text-brand-white-muted/60 leading-relaxed">Las cuotas son no reembolsables, salvo causa atribuible a la organización.</p>
+          </div>
         </div>
       </div>
-      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
-        <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4">
-          <span class="font-title font-bold text-brand-white">¿Qué géneros de danza se aceptan?</span>
-          <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-content hidden px-6 pb-5">
-          <p class="text-sm text-brand-white-muted/60 leading-relaxed">Ballet, Danza Contemporánea, Jazz, Urbano, Poms, Open (fusión de estilos: Ritmos Latinos, Folclore Mexicano, Country, Porras, etc.) y Exhibición (demostrativo).</p>
-        </div>
-      </div>
-      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
-        <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4">
-          <span class="font-title font-bold text-brand-white">¿Cuánto dura cada rutina?</span>
-          <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-content hidden px-6 pb-5">
-          <p class="text-sm text-brand-white-muted/60 leading-relaxed">Solista, Dúo, Tercia y Grupo Pequeño: máximo 3 minutos. Grupo Grande y Colegial: 3 a 4 minutos.</p>
-        </div>
-      </div>
-      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
-        <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4">
-          <span class="font-title font-bold text-brand-white">¿Qué documentos necesito para inscribirme?</span>
-          <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-content hidden px-6 pb-5">
-          <p class="text-sm text-brand-white-muted/60 leading-relaxed">Formulario completo, comprobante de pago, pista musical, aceptación del reglamento y carta responsiva del entrenador. Para Colegial: constancia oficial con CURP y datos del alumno.</p>
-        </div>
-      </div>
-      <div class="reveal bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
-        <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4">
-          <span class="font-title font-bold text-brand-white">¿Se puede reembolsar la inscripción?</span>
-          <svg class="faq-icon w-5 h-5 text-brand-white-muted/40 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-content hidden px-6 pb-5">
-          <p class="text-sm text-brand-white-muted/60 leading-relaxed">Las cuotas son no reembolsables, salvo causa atribuible a la organización.</p>
-        </div>
-      </div>
-    </div>
   </section>
 
   <!-- Gallery -->
@@ -409,7 +442,8 @@
           const content = this.nextElementSibling;
           const icon = this.querySelector('.faq-icon');
           if (content) {
-            content.classList.toggle('hidden');
+            const isOpen = content.classList.toggle('hidden');
+            this.setAttribute('aria-expanded', String(!isOpen));
           }
           if (icon) {
             icon.style.transform = content && content.classList.contains('hidden') ? '' : 'rotate(180deg)';
