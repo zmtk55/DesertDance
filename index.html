@@ -53,6 +53,16 @@
   <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png">
 </head>
 <body class="antialiased overflow-x-hidden">
+  <script>
+    // Evita que el navegador restaure la posición de scroll anterior al recargar
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    // Ir al top al cargar la página (evita que al recargar te quedes abajo)
+    (function () {
+      try { window.scrollTo(0, 0); } catch (e) {}
+      // Re-intento una vez por si el contenido aún está cargando
+      window.addEventListener('load', function () { try { window.scrollTo(0, 0); } catch (e) {} });
+    })();
+  </script>
 
   <!-- Nav -->
   <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-brand-dark/60 border-b border-brand-white-faint">
