@@ -1,6 +1,28 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
   const form = document.getElementById('registration-form');
   if (!form) return;
+
+  // Cargar categorías de competencia desde la BD y poblar el dropdown.
+  const categorySelect = document.getElementById('team-category');
+  if (categorySelect) {
+    try {
+      const { data: cats, error } = await supabase
+        .from('categories')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (!error && cats) {
+        cats.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.name;
+          categorySelect.appendChild(opt);
+        });
+      }
+    } catch (e) {
+      console.warn('No se pudieron cargar las categorías:', e);
+    }
+  }
 
   const STEP_LABELS = { 1: 'Paso 1 de 3', 2: 'Paso 2 de 3', 3: 'Paso 3 de 3' };
   const panels = Array.from(form.querySelectorAll('.step-panel'));
@@ -51,9 +73,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const name = form.querySelector('#team-name').value.trim();
       const contact = form.querySelector('#contact-name').value.trim();
       const email = form.querySelector('#contact-email').value.trim();
+      const category = document.getElementById('team-category')?.value || '';
       if (!name) { showError('Escribe el nombre del estudio o equipo.'); return false; }
       if (!contact) { showError('Escribe el nombre del capitán o representante.'); return false; }
       if (!email) { showError('Escribe el correo del contacto.'); return false; }
+      if (!category) { showError('Selecciona la categoría de competencia.'); return false; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Revisa el correo: parece no ser válido.'); return false; }
       return true;
     }
@@ -174,11 +198,12 @@ document.addEventListener('DOMContentLoaded', function () {
     btn.innerHTML = 'Validando con IA…';
     btn.disabled = true;
 
-    const teamName = form.querySelector('#team-name').value.trim();
-    const originCity = form.querySelector('#origin-city').value.trim();
-    const contactName = form.querySelector('#contact-name').value.trim();
-    const contactPhone = form.querySelector('#contact-phone').value.trim();
-    const contactEmail = form.querySelector('#contact-email').value.trim();
+const teamName = form.querySelector('#team-name').value.trim();
+      const originCity = form.querySelector('#origin-city').value.trim();
+      const contactName = form.querySelector('#contact-name').value.trim();
+      const contactPhone = form.querySelector('#contact-phone').value.trim();
+      const contactEmail = form.querySelector('#contact-email').value.trim();
+      const categoryId = document.getElementById('team-category')?.value || null;
 
     try {
       if (window.TypeSafe) {
@@ -216,7 +241,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const dancers = dancerRows.map(r => ({
       full_name: r.querySelector('.dancer-name').value.trim(),
       technique: r.querySelector('.dancer-technique').value.trim(),
-      division: r.querySelector('.dancer-division').value.trim()
+      division: r.querySelector('.dancer-division').value.trim(),
+      category_id: categoryId
     })).filter(d => d.full_name);
 
     try {
@@ -235,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
           contact_name: contactName,
           contact_phone: contactPhone,
           contact_email: contactEmail,
+          category_id: categoryId,
           logo_path: logo.path,
           logo_url: logo.url,
           music_path: music.path,
