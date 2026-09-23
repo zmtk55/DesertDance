@@ -685,7 +685,7 @@
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Contacto</span><span class="text-brand-white font-medium">${esc(team.contact_name || '—')}</span></div>
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Teléfono</span><span class="text-brand-white font-medium">${esc(team.contact_phone || '—')}</span></div>
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Email</span><span class="text-brand-white font-medium">${esc(team.contact_email || '—')}</span></div>
-            <div class="flex justify-between"><span class="text-brand-white-muted/50">Categoría</span><span class="text-brand-white font-medium">${esc(team.category || '—')}</span></div>
+            <div class="flex justify-between"><span class="text-brand-white-muted/50">Categoría</span><span class="text-brand-white font-medium">${esc(catById(team.category_id)?.name || '—')}</span></div>
           </div>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
@@ -1249,6 +1249,7 @@ function openDancerModal(teamId, dancer = null) {
       technique: $('df-technique').value.trim(),
       division: $('df-division').value.trim(),
       routine_title: $('df-routine').value.trim(),
+      category_id: $('df-category').value || null,
       email: team?.contact_email || '',
       school_name: team?.name || '',
       status: 'pending'
