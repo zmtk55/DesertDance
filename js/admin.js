@@ -31,6 +31,7 @@
     teamData: {},
     categories: [],
     carousel: [],
+    eventLogo: null,
     eventSettings: {},
     adminUsers: [],
     filtered: [],
@@ -98,12 +99,13 @@
   // DATA FETCHING
   // ============================================================
 async function fetchAll() {
-    const [teams, categories, settings, admins, carousel] = await Promise.all([
+    const [teams, categories, settings, admins, carousel, eventLogo] = await Promise.all([
       supabase.from('teams').select('*, participants(id, full_name, technique, division, routine_title, email, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
       supabase.from('admin_users').select('*'),
-      supabase.from('carousel_images').select('*').order('sort_order', { ascending: true })
+      supabase.from('carousel_images').select('*').order('sort_order', { ascending: true }),
+      supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle()
     ]);
 
     if (teams.error) throw teams.error;
@@ -117,6 +119,8 @@ async function fetchAll() {
     state.adminUsers = admins.data || [];
 
     state.carousel = carousel.data || [];
+
+    state.eventLogo = eventLogo.data || null;
 
     for (const t of state.teams) {
       state.dancersByTeam[t.id] = t.participants || [];
@@ -283,6 +287,7 @@ async function fetchAll() {
     if (parts[0] === 'payments-global') return { view: 'payments-global' };
     if (parts[0] === 'categories') return { view: 'categories' };
     if (parts[0] === 'carousel') return { view: 'carousel' };
+    if (parts[0] === 'logo-evento') return { view: 'logo-evento' };
     if (parts[0] === 'settings') return { view: 'settings' };
     if (parts[0] === 'admins') return { view: 'admins' };
     if (parts[0] === 'reports') return { view: 'reports' };
@@ -307,6 +312,7 @@ async function fetchAll() {
         case 'admins': renderAdmins(main); break;
         case 'reports': renderReports(main); break;
         case 'carousel': renderCarousel(); break;
+        case 'logo-evento': renderEventLogo(); break;
       }
     } catch (err) {
       console.error(err);
@@ -1186,6 +1192,7 @@ function openDancerModal(teamId, dancer = null) {
     
     try {
       switch (action) {
+        case 'edit-logo-evento': openLogoEventModal(); break;
         case 'add-carousel': openCarouselModal(); break;
         case 'edit-carousel': { const c = state.carousel.find(x => x.id === id); if (c) openCarouselModal(c); break; }
         case 'delete-carousel': openDeleteModal('¿Eliminar foto?', 'Esta acción no se puede deshacer.', async () => { await deleteCarousel(id); state.carousel = state.carousel.filter(x => x.id !== id); navigate(); toast('Foto eliminada'); }); break;
@@ -1252,6 +1259,23 @@ function openDancerModal(teamId, dancer = null) {
       }
       openModal(null);
       navigate();
+    } catch (err) { toast(err.message, false); }
+  });
+
+  // Logo del evento form
+  $('logo-evento-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = $('lf-file').files[0];
+    const label = $('lf-label').value.trim();
+    try {
+      if (!file) { toast('Debes seleccionar una foto', false); return; }
+      const { path, url } = await uploadEventLogo(file);
+      await upsertEventLogo({ label, image_path: path, image_url: url });
+      const { data } = await supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle();
+      state.eventLogo = data || null;
+      renderEventLogo();
+      openModal(null);
+      toast('Logo actualizado');
     } catch (err) { toast(err.message, false); }
   });
 
@@ -1601,12 +1625,52 @@ function openCarouselModal(img = null) {
   }
 
   // ============================================================
+  // LOGO DEL EVENTO (hero del landing)
+  // ============================================================
+  async function uploadEventLogo(file) {
+    const ext = (file.name.split('.').pop() || 'svg').toLowerCase();
+    const path = `logos/event-logo-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('event-assets').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    const { data } = supabase.storage.from('event-assets').getPublicUrl(path);
+    return { path, url: data.publicUrl };
+  }
+
+  async function upsertEventLogo(data) {
+    const { error } = await supabase.from('event_assets')
+      .upsert({ key: 'event_logo', ...data }, { onConflict: 'key' });
+    if (error) throw error;
+  }
+
+  function renderEventLogo() {
+    const urlEl = $('admin-event-logo-url');
+    const imgEl = $('admin-event-logo');
+    if (!urlEl || !imgEl) return;
+    if (state.eventLogo) {
+      urlEl.textContent = state.eventLogo.image_url || state.eventLogo.image_path || '—';
+      imgEl.src = state.eventLogo.image_url || 'assets/logos/vertical_primary.svg';
+    } else {
+      urlEl.textContent = 'assets/logos/vertical_primary.svg (por defecto)';
+      imgEl.src = 'assets/logos/vertical_primary.svg';
+    }
+  }
+
+  function openLogoEventModal() {
+    $('logo-evento-modal-title').textContent = 'Editar logo';
+    $('lf-id').value = state.eventLogo?.id || '';
+    $('lf-file').value = '';
+    $('lf-label').value = state.eventLogo?.label || '';
+    openModal('logo-evento');
+  }
+
+  // ============================================================
   // INIT
   // ============================================================
   (async function init() {
     try {
       await guard();
       await fetchAll();
+      renderEventLogo();
       navigate();
       $('auth-loading').classList.add('hidden');
     } catch (err) {
