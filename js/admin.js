@@ -4,8 +4,15 @@
   // ============================================================
   // CONSTANTS
   // ============================================================
-  const BUCKET = 'team-files';
-  const BUCKET_DOCS = 'team-docs';
+   const BUCKET = 'team-files';
+   const BUCKET_DOCS = 'team-docs';
+
+   function hexAlpha(hex, alpha) {
+     const r = parseInt(hex.slice(1, 3), 16);
+     const g = parseInt(hex.slice(3, 5), 16);
+     const b = parseInt(hex.slice(5, 7), 16);
+     return `rgba(${r},${g},${b},${alpha})`;
+   }
   
   const STATUS_LABELS = {
     pending: { label: 'Pendiente', dot: '#e8ab4a' },
@@ -99,13 +106,14 @@
   // DATA FETCHING
   // ============================================================
 async function fetchAll() {
-    const [teams, categories, settings, admins, carousel, eventLogo] = await Promise.all([
+    const [teams, categories, settings, admins, carousel, eventLogo, auditLog] = await Promise.all([
       supabase.from('teams').select('*, participants(id, full_name, technique, division, routine_title, email, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
       supabase.from('admin_users').select('*'),
       supabase.from('carousel_images').select('*').order('sort_order', { ascending: true }),
-      supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle()
+      supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle(),
+      supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(100),
     ]);
 
     if (teams.error) throw teams.error;
@@ -117,6 +125,7 @@ async function fetchAll() {
     (settings.data || []).forEach(s => { state.eventSettings[s.key] = s.value; });
 
     state.adminUsers = admins.data || [];
+    state.auditLog = auditLog.data || [];
 
     state.carousel = carousel.data || [];
 
@@ -125,6 +134,21 @@ async function fetchAll() {
     for (const t of state.teams) {
       state.dancersByTeam[t.id] = t.participants || [];
     }
+  }
+
+  // ============================================================
+  // REALTIME SUBSCRIPTIONS
+  // ============================================================
+  function setupSubscriptions() {
+    const channels = ['teams', 'categories', 'admin_users', 'carousel_images', 'event_assets'];
+    channels.forEach(table => {
+      supabase
+        .channel(`public:${table}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+          fetchAll().then(() => navigate());
+        })
+        .subscribe();
+    });
   }
 
   async function fetchTeamData(teamId) {
@@ -157,47 +181,56 @@ async function fetchAll() {
     const id = crypto.randomUUID();
     const { error } = await supabase.from('teams').insert([{ id, ...data, status: data.status || 'pending' }]);
     if (error) throw error;
+    await logAction('create', 'team', id, data);
     return id;
   }
 
   async function updateTeam(id, data) {
     const { error } = await supabase.from('teams').update(data).eq('id', id);
     if (error) throw error;
+    await logAction('update', 'team', id, data);
   }
 
   async function deleteTeam(id) {
     const { error } = await supabase.from('teams').delete().eq('id', id);
     if (error) throw error;
+    await logAction('delete', 'team', id);
   }
 
   async function createDancer(data) {
     const { error } = await supabase.from('participants').insert([data]);
     if (error) throw error;
+    await logAction('create', 'dancer', data.team_id, { full_name: data.full_name });
   }
 
   async function updateDancer(id, data) {
     const { error } = await supabase.from('participants').update(data).eq('id', id);
     if (error) throw error;
+    await logAction('update', 'dancer', id, data);
   }
 
   async function deleteDancer(id) {
     const { error } = await supabase.from('participants').delete().eq('id', id);
     if (error) throw error;
+    await logAction('delete', 'dancer', id);
   }
 
   async function createPayment(data) {
     const { error } = await supabase.from('payments').insert([data]);
     if (error) throw error;
+    await logAction('create', 'payment', data.team_id, { amount: data.amount, concept: data.concept });
   }
 
   async function updatePayment(id, data) {
     const { error } = await supabase.from('payments').update(data).eq('id', id);
     if (error) throw error;
+    await logAction('update', 'payment', id, data);
   }
 
   async function deletePayment(id) {
     const { error } = await supabase.from('payments').delete().eq('id', id);
     if (error) throw error;
+    await logAction('delete', 'payment', id);
   }
 
   async function createCommLog(data) {
@@ -213,37 +246,58 @@ async function fetchAll() {
   async function createCategory(data) {
     const { data: created, error } = await supabase.from('categories').insert([data]).select('id').single();
     if (error) throw error;
+    await logAction('create', 'category', created?.id, data);
     return created?.id;
   }
 
   async function updateCategory(id, data) {
     const { error } = await supabase.from('categories').update(data).eq('id', id);
     if (error) throw error;
+    await logAction('update', 'category', id, data);
   }
 
   async function deleteCategory(id) {
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) throw error;
+    await logAction('delete', 'category', id);
   }
 
   async function createAdminUser(data) {
-    const { data: created, error } = await supabase.from('admin_users').insert([data]).select('id').single();
-    if (error) throw error;
-    return created?.id;
+    const { data: result, error: fnErr } = await supabase.functions.invoke('create-admin', {
+      body: { email: data.email, name: data.name, role: data.role },
+    });
+    if (fnErr || !result?.ok) throw new Error(result?.error || 'Error al crear administrador');
+    return result.userId;
   }
 
   async function updateAdminUser(id, data) {
     const { error } = await supabase.from('admin_users').update(data).eq('id', id);
     if (error) throw error;
+    await logAction('update', 'admin', id, data);
   }
 
   async function deleteAdminUser(id) {
     const { error } = await supabase.from('admin_users').delete().eq('id', id);
     if (error) throw error;
+    await logAction('delete', 'admin', id);
   }
 
   // ============================================================
-  // SIDEBAR
+  // AUDIT LOG
+  // ============================================================
+  async function logAction(action, entityType, entityId, details = {}) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const adminUser = state.adminUsers.find(a => a.email === session?.user?.email);
+      await supabase.from('audit_log').insert([{
+        admin_id: adminUser?.id || null,
+        action,
+        entity_type: entityType,
+        entity_id: entityId,
+        details,
+      }]);
+    } catch (e) { /* non-critical */ }
+  }
   // ============================================================
   function updateSidebar() {
     const hash = window.location.hash.slice(1) || '';
@@ -331,24 +385,24 @@ async function fetchAll() {
     container.innerHTML = `
       <div class="mb-8">
         <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-1">Panel <span class="italic-display italic text-brand-lime font-light">general</span></h2>
-        <p class="text-brand-white-muted/40 text-sm">Resumen de Desert Dance 2026</p>
+        <p class="text-brand-white-muted/60 text-sm">Resumen de Desert Dance 2026</p>
       </div>
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Equipos</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Equipos</p>
           <p class="font-title text-4xl font-black text-brand-white">${total}</p>
         </div>
         <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Bailarines</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Bailarines</p>
           <p class="font-title text-4xl font-black text-brand-white">${totalDancers}</p>
         </div>
         <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Pendientes</p>
-          <p class="font-title text-4xl font-black text-[#e8ab4a]">${count('pending')}</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Pendientes</p>
+          <p class="font-title text-4xl font-black text-brand-warn">${count('pending')}</p>
         </div>
         <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-1">Confirmados</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Confirmados</p>
           <p class="font-title text-4xl font-black text-brand-lime">${count('confirmed')}</p>
         </div>
       </div>
@@ -356,15 +410,15 @@ async function fetchAll() {
       <div class="grid sm:grid-cols-3 gap-4 mb-8">
         <a href="#teams" class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-4 hover:border-brand-lime/30 transition-colors flex items-center gap-3">
           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-          <div><p class="font-bold text-brand-white text-sm">Ver equipos</p><p class="text-[10px] text-brand-white-muted/40">${total} registrados</p></div>
+          <div><p class="font-bold text-brand-white text-sm">Ver equipos</p><p class="text-[10px] text-brand-white-muted/60">${total} registrados</p></div>
         </a>
         <button data-action="add-team" class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-4 hover:border-brand-lime/30 transition-colors flex items-center gap-3 text-left">
           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-          <div><p class="font-bold text-brand-white text-sm">Agregar equipo</p><p class="text-[10px] text-brand-white-muted/40">Registro manual</p></div>
+          <div><p class="font-bold text-brand-white text-sm">Agregar equipo</p><p class="text-[10px] text-brand-white-muted/60">Registro manual</p></div>
         </button>
         <a href="#reports" class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-4 hover:border-brand-lime/30 transition-colors flex items-center gap-3">
           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
-          <div><p class="font-bold text-brand-white text-sm">Reportes</p><p class="text-[10px] text-brand-white-muted/40">Exportar datos</p></div>
+          <div><p class="font-bold text-brand-white text-sm">Reportes</p><p class="text-[10px] text-brand-white-muted/60">Exportar datos</p></div>
         </a>
       </div>
       
@@ -378,15 +432,15 @@ async function fetchAll() {
             const st = STATUS_LABELS[team.status] || STATUS_LABELS.pending;
             return `
               <a href="#team/${team.id}" class="flex items-center gap-3 bg-brand-dark-elevated/30 rounded-xl border border-brand-white-faint px-4 py-3 hover:border-brand-lime/30 transition-colors">
-                ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-8 h-8 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-0.5">` : `<div class="w-8 h-8 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/40 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
+                ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-8 h-8 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-0.5">` : `<div class="w-8 h-8 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-semibold text-brand-white truncate">${esc(team.name)}</p>
-                  <p class="text-[10px] text-brand-white-muted/40">${esc(team.origin_city || '—')}</p>
+                  <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')}</p>
                 </div>
-                <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${st.dot};background:${st.dot}12">${st.label}</span>
-                <span class="text-[10px] text-brand-white-muted/30 hidden sm:block">${new Date(team.created_at).toLocaleDateString('es-MX')}</span>
+                <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${st.dot};background:${hexAlpha(st.dot, 0.12)}">${st.label}</span>
+                <span class="text-[10px] text-brand-white-muted/50 hidden sm:block">${new Date(team.created_at).toLocaleDateString('es-MX')}</span>
               </a>`;
-          }).join('') || '<p class="text-brand-white-muted/30 text-sm py-8 text-center">Sin equipos registrados</p>'}
+          }).join('') || '<p class="text-brand-white-muted/50 text-sm py-8 text-center">Sin equipos registrados</p>'}
         </div>
       </div>
     `;
@@ -418,7 +472,7 @@ async function fetchAll() {
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
           <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Equipos</h2>
-          <p class="text-brand-white-muted/40 text-xs mt-1">${state.filtered.length} de ${state.teams.length} equipos</p>
+          <p class="text-brand-white-muted/60 text-xs mt-1">${state.filtered.length} de ${state.teams.length} equipos</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <div class="flex items-center gap-1 bg-brand-dark-elevated/50 rounded-lg p-1 border border-brand-white-faint">
@@ -432,18 +486,26 @@ async function fetchAll() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             </button>
           </div>
-          <button data-action="add-team" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Agregar
-          </button>
+           <button data-action="add-team" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+             Agregar
+           </button>
+           <button data-action="import-teams" class="inline-flex items-center gap-2 bg-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-white-faint/80 transition-colors">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+             Importar CSV
+           </button>
+           <button data-action="view-calendar" class="inline-flex items-center gap-2 bg-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-white-faint/80 transition-colors">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+             Calendario
+           </button>
         </div>
       </div>
       
       <div class="flex flex-col sm:flex-row gap-3 mb-6">
         <div class="relative flex-1">
           <input id="teams-search" type="search" placeholder="Buscar equipo, ciudad, contacto..." value="${esc(state.search)}"
-            class="w-full bg-brand-dark-elevated/70 border border-brand-white-faint rounded-xl px-4 py-2.5 pl-9 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-white-muted/30" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            class="w-full bg-brand-dark-elevated/70 border border-brand-white-faint rounded-xl px-4 py-2.5 pl-9 text-sm text-brand-white placeholder:text-brand-white-muted/50 focus:outline-none focus:border-brand-lime/40 transition-colors">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-white-muted/50" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         </div>
         <select id="teams-filter-city" class="bg-brand-dark-elevated/70 border border-brand-white-faint rounded-xl px-4 py-2.5 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
           <option value="">Todas las ciudades</option>
@@ -459,7 +521,7 @@ async function fetchAll() {
       
       ${totalPages > 1 ? `
         <div class="flex items-center justify-between mt-6">
-          <p class="text-xs text-brand-white-muted/40">Página ${state.page} de ${totalPages}</p>
+          <p class="text-xs text-brand-white-muted/60">Página ${state.page} de ${totalPages}</p>
           <div class="flex gap-2">
             <button id="page-prev" class="px-4 py-2 rounded-lg border border-brand-white-faint text-xs text-brand-white-muted/60 hover:text-brand-lime hover:border-brand-lime/40 disabled:opacity-30 disabled:pointer-events-none transition-colors" ${state.page <= 1 ? 'disabled' : ''}>‹ Anterior</button>
             <button id="page-next" class="px-4 py-2 rounded-lg border border-brand-white-faint text-xs text-brand-white-muted/60 hover:text-brand-lime hover:border-brand-lime/40 disabled:opacity-30 disabled:pointer-events-none transition-colors" ${state.page >= totalPages ? 'disabled' : ''}>Siguiente ›</button>
@@ -489,11 +551,11 @@ async function fetchAll() {
           <div class="overflow-x-auto">
             <table class="w-full text-sm min-w-[800px]">
               <thead><tr class="border-b border-brand-white-faint text-left">
-                <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Equipo</th>
-                <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Contacto</th>
-                <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Horario</th>
-                <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Estatus</th>
-                <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold text-right">Acciones</th>
+                <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Equipo</th>
+                <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Contacto</th>
+                <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Horario</th>
+                <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Estatus</th>
+                <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold text-right">Acciones</th>
               </tr></thead>
               <tbody>${pageItems.map(teamTableRow).join('')}</tbody>
             </table>
@@ -508,15 +570,15 @@ async function fetchAll() {
     return `
       <a href="#team/${team.id}" class="block bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 hover:border-brand-lime/30 hover:-translate-y-0.5 transition-all duration-300">
         <div class="flex items-center gap-3 mb-3">
-          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-11 h-11 rounded-xl object-contain bg-brand-dark/60 border border-brand-white-faint p-1">` : `<div class="w-11 h-11 rounded-xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/40 font-title font-bold">${esc(team.name.charAt(0))}</div>`}
+          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-11 h-11 rounded-xl object-contain bg-brand-dark/60 border border-brand-white-faint p-1">` : `<div class="w-11 h-11 rounded-xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 font-title font-bold">${esc(team.name.charAt(0))}</div>`}
           <div class="flex-1 min-w-0">
             <p class="font-semibold text-brand-white truncate text-sm">${esc(team.name)}</p>
-            <p class="text-[10px] text-brand-white-muted/40">${esc(team.origin_city || '—')}</p>
+            <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')}</p>
           </div>
         </div>
         <div class="flex items-center justify-between">
-          <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${st.dot};background:${st.dot}12"><span class="badge-dot" style="background:${st.dot}"></span>${st.label}</span>
-          <span class="text-[10px] text-brand-white-muted/40">${dancers} bailarines</span>
+          <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${st.dot};background:${hexAlpha(st.dot, 0.12)}"><span class="badge-dot" style="background:${st.dot}"></span>${st.label}</span>
+          <span class="text-[10px] text-brand-white-muted/60">${dancers} bailarines</span>
         </div>
       </a>`;
   }
@@ -526,13 +588,13 @@ async function fetchAll() {
     const dancers = state.dancersByTeam[team.id]?.length || 0;
     return `
       <a href="#team/${team.id}" class="flex items-center gap-3 bg-brand-dark-elevated/30 rounded-xl border border-brand-white-faint px-4 py-3 hover:border-brand-lime/30 transition-colors">
-        ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-9 h-9 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-0.5">` : `<div class="w-9 h-9 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/40 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
+        ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-9 h-9 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-0.5">` : `<div class="w-9 h-9 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-brand-white truncate">${esc(team.name)}</p>
-          <p class="text-[10px] text-brand-white-muted/40">${esc(team.origin_city || '—')} · ${esc(team.contact_name || '—')} · ${dancers} bailarines</p>
+          <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')} · ${esc(team.contact_name || '—')} · ${dancers} bailarines</p>
         </div>
-        <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 hidden sm:flex" style="color:${st.dot};background:${st.dot}12">${st.label}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-white-muted/30"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 hidden sm:flex" style="color:${st.dot};background:${hexAlpha(st.dot, 0.12)}">${st.label}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-white-muted/50"><polyline points="9 18 15 12 9 6"/></svg>
       </a>`;
   }
 
@@ -545,16 +607,16 @@ async function fetchAll() {
       <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5 transition-colors">
         <td class="px-5 py-3">
           <div class="flex items-center gap-3">
-            ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-9 h-9 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-1">` : `<div class="w-9 h-9 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/40 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
+            ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-9 h-9 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-1">` : `<div class="w-9 h-9 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
             <div>
               <a href="#team/${team.id}" class="font-semibold text-brand-white hover:text-brand-lime transition-colors">${esc(team.name)}</a>
-              <span class="block text-[10px] text-brand-white-muted/40">${esc(team.origin_city || '—')} · ${dancers} bailarines</span>
+              <span class="block text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')} · ${dancers} bailarines</span>
             </div>
           </div>
         </td>
         <td class="px-5 py-3 text-brand-white-muted/70 text-xs">
           <span class="block">${esc(team.contact_name || '—')}</span>
-          <span class="block text-brand-white-muted/40">${esc(team.contact_phone || '')}</span>
+          <span class="block text-brand-white-muted/60">${esc(team.contact_phone || '')}</span>
         </td>
         <td class="px-5 py-3 text-brand-white-muted/70 text-xs">${sched}</td>
         <td class="px-5 py-3">
@@ -564,13 +626,13 @@ async function fetchAll() {
         </td>
         <td class="px-5 py-3">
           <div class="flex justify-end gap-1.5">
-            <a href="#team/${team.id}" title="Ver" class="p-2 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors">
+            <a href="#team/${team.id}" title="Ver" class="p-2 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </a>
-            <button data-action="edit-team" data-id="${team.id}" title="Editar" class="p-2 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors">
+            <button data-action="edit-team" data-id="${team.id}" title="Editar" class="p-2 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
             </button>
-            <button data-action="delete-team" data-id="${team.id}" title="Eliminar" class="p-2 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors">
+            <button data-action="delete-team" data-id="${team.id}" title="Eliminar" class="p-2 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
             </button>
           </div>
@@ -604,7 +666,7 @@ async function fetchAll() {
   // ============================================================
   async function renderTeamDetail(teamId, section, container) {
     const team = state.teams.find(t => t.id === teamId);
-    if (!team) { container.innerHTML = '<p class="text-center py-20 text-brand-white-muted/40">Equipo no encontrado</p>'; return; }
+    if (!team) { container.innerHTML = '<p class="text-center py-20 text-brand-white-muted/60">Equipo no encontrado</p>'; return; }
     
     addRecentTeam(team);
     updateSidebar();
@@ -614,7 +676,7 @@ async function fetchAll() {
     const st = STATUS_LABELS[team.status] || STATUS_LABELS.pending;
     
     container.innerHTML = `
-      <div class="flex items-center gap-2 text-xs text-brand-white-muted/40 mb-6">
+      <div class="flex items-center gap-2 text-xs text-brand-white-muted/60 mb-6">
         <a href="#teams" class="hover:text-brand-lime transition-colors">Equipos</a>
         <span>/</span>
         <span class="text-brand-white">${esc(team.name)}</span>
@@ -622,7 +684,7 @@ async function fetchAll() {
       
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-4">
-          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-14 h-14 rounded-2xl object-contain bg-brand-dark-elevated border border-brand-white-faint p-1.5">` : `<div class="w-14 h-14 rounded-2xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/40 font-title font-bold text-xl">${esc(team.name.charAt(0))}</div>`}
+          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-14 h-14 rounded-2xl object-contain bg-brand-dark-elevated border border-brand-white-faint p-1.5">` : `<div class="w-14 h-14 rounded-2xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 font-title font-bold text-xl">${esc(team.name.charAt(0))}</div>`}
           <div>
             <h1 class="font-title text-xl md:text-2xl font-black text-brand-white">${esc(team.name)}</h1>
             <p class="text-sm text-brand-white-muted/50">${esc(team.origin_city || '—')} · ${esc(team.contact_name || '—')}</p>
@@ -636,26 +698,26 @@ async function fetchAll() {
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div class="bg-brand-dark-elevated/50 rounded-xl p-4 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-wider font-extrabold mb-1">Bailarines</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-wider font-extrabold mb-1">Bailarines</p>
           <p class="font-title text-2xl font-black text-brand-white">${dancers.length}</p>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-xl p-4 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-wider font-extrabold mb-1">Pagado</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-wider font-extrabold mb-1">Pagado</p>
           <p class="font-title text-2xl font-black text-brand-lime">$${formatAmount(data.payments.paid)}</p>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-xl p-4 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-wider font-extrabold mb-1">Pendiente</p>
-          <p class="font-title text-2xl font-black text-[#e8ab4a]">$${formatAmount(data.payments.pending)}</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-wider font-extrabold mb-1">Pendiente</p>
+          <p class="font-title text-2xl font-black text-brand-warn">$${formatAmount(data.payments.pending)}</p>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-xl p-4 border border-brand-white-faint">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-wider font-extrabold mb-1">Docs</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-wider font-extrabold mb-1">Docs</p>
           <p class="font-title text-2xl font-black text-brand-white">${data.documents.length}</p>
         </div>
       </div>
       
       <div class="flex gap-1 mb-6 border-b border-brand-white-faint overflow-x-auto">
         ${['info', 'dancers', 'payments', 'documents', 'calendar', 'comms'].map(s => `
-          <button data-section="${s}" class="tab-btn px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${section === s ? 'text-brand-lime border-brand-lime' : 'text-brand-white-muted/40 border-transparent hover:text-brand-white'}">
+          <button data-section="${s}" class="tab-btn px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${section === s ? 'text-brand-lime border-brand-lime' : 'text-brand-white-muted/60 border-transparent hover:text-brand-white'}">
             ${{ info: 'Info', dancers: 'Bailarines', payments: 'Pagos', documents: 'Docs', calendar: 'Calendario', comms: 'Comunicación' }[s]}
           </button>
         `).join('')}
@@ -707,7 +769,7 @@ async function fetchAll() {
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Registro</span><span class="text-brand-white font-medium">${new Date(team.created_at).toLocaleDateString('es-MX')}</span></div>
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Última actualización</span><span class="text-brand-white font-medium">${new Date(team.updated_at).toLocaleDateString('es-MX')}</span></div>
           </div>
-          ${team.notes ? `<div class="mt-4 pt-4 border-t border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/40 uppercase tracking-wider font-extrabold mb-2">Notas</p><p class="text-sm text-brand-white-muted/70">${esc(team.notes)}</p></div>` : ''}
+          ${team.notes ? `<div class="mt-4 pt-4 border-t border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/60 uppercase tracking-wider font-extrabold mb-2">Notas</p><p class="text-sm text-brand-white-muted/70">${esc(team.notes)}</p></div>` : ''}
         </div>
       </div>`;
   }
@@ -723,13 +785,13 @@ async function fetchAll() {
           Agregar
         </button>
       </div>
-      ${dancers.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/30 text-sm">Sin bailarines registrados</p>' : `
+      ${dancers.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/50 text-sm">Sin bailarines registrados</p>' : `
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
           <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Nombre</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Técnica</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">División</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold text-right">Acciones</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Nombre</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Técnica</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">División</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold text-right">Acciones</th>
           </tr></thead><tbody>
             ${dancers.map(d => `
               <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
@@ -738,8 +800,8 @@ async function fetchAll() {
                 <td class="px-5 py-3 text-brand-white-muted/70">${esc(d.division || '—')}</td>
                 <td class="px-5 py-3">
                   <div class="flex justify-end gap-1.5">
-                    <button data-action="edit-dancer" data-id="${d.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-                    <button data-action="delete-dancer" data-id="${d.id}" data-team="${team.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                    <button data-action="edit-dancer" data-id="${d.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                    <button data-action="delete-dancer" data-id="${d.id}" data-team="${team.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
                   </div>
                 </td>
               </tr>`).join('')}
@@ -759,31 +821,31 @@ async function fetchAll() {
         </button>
       </div>
       <div class="grid grid-cols-3 gap-3 mb-4">
-        <div class="bg-brand-dark-elevated/50 rounded-xl p-3 border border-brand-white-faint text-center"><p class="text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Pagado</p><p class="font-title text-xl font-black text-brand-lime">$${formatAmount(data.payments.paid)}</p></div>
-        <div class="bg-brand-dark-elevated/50 rounded-xl p-3 border border-brand-white-faint text-center"><p class="text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Pendiente</p><p class="font-title text-xl font-black text-[#e8ab4a]">$${formatAmount(data.payments.pending)}</p></div>
-        <div class="bg-brand-dark-elevated/50 rounded-xl p-3 border border-brand-white-faint text-center"><p class="text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Total</p><p class="font-title text-xl font-black text-brand-white">${payments.length}</p></div>
+        <div class="bg-brand-dark-elevated/50 rounded-xl p-3 border border-brand-white-faint text-center"><p class="text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Pagado</p><p class="font-title text-xl font-black text-brand-lime">$${formatAmount(data.payments.paid)}</p></div>
+        <div class="bg-brand-dark-elevated/50 rounded-xl p-3 border border-brand-white-faint text-center"><p class="text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Pendiente</p><p class="font-title text-xl font-black text-brand-warn">$${formatAmount(data.payments.pending)}</p></div>
+        <div class="bg-brand-dark-elevated/50 rounded-xl p-3 border border-brand-white-faint text-center"><p class="text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Total</p><p class="font-title text-xl font-black text-brand-white">${payments.length}</p></div>
       </div>
-      ${payments.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/30 text-sm">Sin pagos registrados</p>' : `
+      ${payments.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/50 text-sm">Sin pagos registrados</p>' : `
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
           <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
-            <th class="px-4 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Concepto</th>
-            <th class="px-4 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Monto</th>
-            <th class="px-4 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Estado</th>
-            <th class="px-4 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Vence</th>
-            <th class="px-4 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold text-right">Acciones</th>
+            <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Concepto</th>
+            <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Monto</th>
+            <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Estado</th>
+            <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Vence</th>
+            <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-right">Acciones</th>
           </tr></thead><tbody>
             ${payments.map(p => {
               const ps = PAYMENT_STATUS[p.status] || PAYMENT_STATUS.pending;
               return `
                 <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
-                  <td class="px-4 py-3 text-brand-white font-medium">${esc(p.concept)}${p.reference ? `<span class="block text-[10px] text-brand-white-muted/40">Ref: ${esc(p.reference)}</span>` : ''}</td>
+                  <td class="px-4 py-3 text-brand-white font-medium">${esc(p.concept)}${p.reference ? `<span class="block text-[10px] text-brand-white-muted/60">Ref: ${esc(p.reference)}</span>` : ''}</td>
                   <td class="px-4 py-3 font-title font-bold text-brand-white">$${formatAmount(p.amount)}</td>
                   <td class="px-4 py-3"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${ps.color};background:${ps.bg}">${ps.label}</span></td>
                   <td class="px-4 py-3 text-brand-white-muted/70 text-xs">${p.due_date ? new Date(p.due_date).toLocaleDateString('es-MX') : '—'}</td>
                   <td class="px-4 py-3">
                     <div class="flex justify-end gap-1.5">
-                      <button data-action="edit-payment" data-id="${p.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-                      <button data-action="delete-payment" data-id="${p.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                      <button data-action="edit-payment" data-id="${p.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                      <button data-action="delete-payment" data-id="${p.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
                     </div>
                   </td>
                 </tr>`;
@@ -804,20 +866,21 @@ async function fetchAll() {
           <input type="file" id="upload-doc-input" class="hidden" accept="image/*,audio/*,.pdf,.doc,.docx" data-team="${team.id}">
         </label>
       </div>
-      ${docs.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/30 text-sm">Sin documentos</p>' : `
+      ${docs.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/50 text-sm">Sin documentos</p>' : `
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           ${docs.map(d => `
             <div class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-4 flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/40 flex-shrink-0">
+              <div class="w-10 h-10 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 flex-shrink-0">
                 ${d.type === 'logo' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/></svg>' : d.type === 'music' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>'}
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-brand-white truncate">${esc(d.name)}</p>
-                <p class="text-[10px] text-brand-white-muted/40">${formatBytes(d.file_size || 0)}</p>
+                <p class="text-[10px] text-brand-white-muted/60">${formatBytes(d.file_size || 0)}</p>
               </div>
               <div class="flex gap-1">
-                <a href="${esc(d.file_url)}" target="_blank" class="p-1.5 rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg></a>
-                <button data-action="delete-doc" data-id="${d.id}" class="p-1.5 rounded-lg text-brand-white-muted/50 hover:text-red-400 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                 <a href="${esc(d.file_url)}" target="_blank" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg></a>
+                 <button data-action="preview-doc" data-id="${d.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                 <button data-action="delete-doc" data-id="${d.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-brand-white-muted/50 hover:text-red-400 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
               </div>
             </div>`).join('')}
         </div>`}`;
@@ -831,11 +894,11 @@ async function fetchAll() {
       <div class="grid md:grid-cols-2 gap-6">
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <div class="flex items-center justify-between mb-4">
-            <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold">Presentación</p>
+            <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Presentación</p>
             <button data-action="edit-schedule" data-team="${team.id}" class="text-[10px] font-bold uppercase tracking-wider text-brand-lime hover:underline">Editar</button>
           </div>
           <div id="schedule-display">
-            ${sched ? `<div class="flex items-center gap-4"><div class="w-14 h-14 rounded-xl bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center"><span class="font-title text-2xl font-black text-brand-lime">${sched.getDate()}</span></div><div><p class="font-title text-lg font-bold text-brand-white">${sched.toLocaleDateString('es-MX', { weekday: 'long', month: 'long', year: 'numeric' })}</p><p class="text-brand-white-muted/50 text-sm">${sched.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} hrs</p></div></div>` : '<p class="text-brand-white-muted/30 text-sm text-center py-6">Sin horario asignado</p>'}
+            ${sched ? `<div class="flex items-center gap-4"><div class="w-14 h-14 rounded-xl bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center"><span class="font-title text-2xl font-black text-brand-lime">${sched.getDate()}</span></div><div><p class="font-title text-lg font-bold text-brand-white">${sched.toLocaleDateString('es-MX', { weekday: 'long', month: 'long', year: 'numeric' })}</p><p class="text-brand-white-muted/50 text-sm">${sched.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} hrs</p></div></div>` : '<p class="text-brand-white-muted/50 text-sm text-center py-6">Sin horario asignado</p>'}
           </div>
           <div id="schedule-edit" class="hidden mt-4">
             <input id="inline-schedule" type="datetime-local" value="${schedValue}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
@@ -846,7 +909,7 @@ async function fetchAll() {
           </div>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
-          <p class="text-[10px] text-brand-white-muted/40 uppercase tracking-[0.15em] font-extrabold mb-4">Evento</p>
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-4">Evento</p>
           <div class="space-y-3 text-sm">
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Fechas F1</span><span class="text-brand-white">${esc(state.eventSettings.event_dates_phase1 || '—')}</span></div>
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Fechas F2</span><span class="text-brand-white">${esc(state.eventSettings.event_dates_phase2 || '—')}</span></div>
@@ -870,18 +933,18 @@ async function fetchAll() {
           ${team.contact_phone ? `<a href="https://wa.me/52${team.contact_phone.replace(/\D/g, '')}" target="_blank" class="inline-flex items-center gap-2 bg-emerald-500/15 text-emerald-400 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.1em] hover:bg-emerald-500/25 transition-colors">WhatsApp</a>` : ''}
         </div>
       </div>
-      ${comms.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/30 text-sm">Sin registros</p>' : `
+      ${comms.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/50 text-sm">Sin registros</p>' : `
         <div class="space-y-3">
           ${comms.map(c => `
             <div class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-4 flex gap-3">
               <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${c.direction === 'outbound' ? 'bg-brand-lime/10' : 'bg-brand-white-faint'}">
-                ${c.direction === 'outbound' ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-white-muted/40"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'}
+                ${c.direction === 'outbound' ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-white-muted/60"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'}
               </div>
               <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1">
                   <span class="text-xs font-bold text-brand-white capitalize">${esc(c.channel)}</span>
-                  <span class="text-[10px] text-brand-white-muted/30">·</span>
-                  <span class="text-[10px] text-brand-white-muted/40">${new Date(c.sent_at).toLocaleString('es-MX')}</span>
+                  <span class="text-[10px] text-brand-white-muted/50">·</span>
+                  <span class="text-[10px] text-brand-white-muted/60">${new Date(c.sent_at).toLocaleString('es-MX')}</span>
                 </div>
                 ${c.subject ? `<p class="text-sm font-medium text-brand-white mb-0.5">${esc(c.subject)}</p>` : ''}
                 <p class="text-sm text-brand-white-muted/60">${esc(c.message || '')}</p>
@@ -902,21 +965,21 @@ async function fetchAll() {
     container.innerHTML = `
       <div class="mb-8">
         <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-1">Pagos <span class="italic-display italic text-brand-lime font-light">globales</span></h2>
-        <p class="text-brand-white-muted/40 text-sm">Resumen financiero</p>
+        <p class="text-brand-white-muted/60 text-sm">Resumen financiero</p>
       </div>
       <div class="grid grid-cols-3 gap-4 mb-8">
-        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/40 uppercase font-extrabold mb-1">Cobrado</p><p class="font-title text-3xl font-black text-brand-lime">$${formatAmount(totalPaid)}</p></div>
-        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/40 uppercase font-extrabold mb-1">Pendiente</p><p class="font-title text-3xl font-black text-[#e8ab4a]">$${formatAmount(totalPending)}</p></div>
-        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/40 uppercase font-extrabold mb-1">Transacciones</p><p class="font-title text-3xl font-black text-brand-white">${allPayments.length}</p></div>
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/60 uppercase font-extrabold mb-1">Cobrado</p><p class="font-title text-3xl font-black text-brand-lime">$${formatAmount(totalPaid)}</p></div>
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/60 uppercase font-extrabold mb-1">Pendiente</p><p class="font-title text-3xl font-black text-brand-warn">$${formatAmount(totalPending)}</p></div>
+        <div class="stat-card bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint"><p class="text-[10px] text-brand-white-muted/60 uppercase font-extrabold mb-1">Transacciones</p><p class="font-title text-3xl font-black text-brand-white">${allPayments.length}</p></div>
       </div>
-      ${allPayments.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/30">Sin pagos registrados</p>' : `
+      ${allPayments.length === 0 ? '<p class="text-center py-12 text-brand-white-muted/50">Sin pagos registrados</p>' : `
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
           <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Equipo</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Concepto</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Monto</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Estado</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Vence</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Equipo</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Concepto</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Monto</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Estado</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Vence</th>
           </tr></thead><tbody>
             ${allPayments.map(p => {
               const ps = PAYMENT_STATUS[p.status] || PAYMENT_STATUS.pending;
@@ -946,11 +1009,11 @@ async function fetchAll() {
       </div>
       <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
         <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Nombre</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Descripción</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Máx.</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Estado</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold text-right">Acciones</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Nombre</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Descripción</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Máx.</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Estado</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-right">Acciones</th>
         </tr></thead><tbody>
           ${state.categories.map(c => `
             <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
@@ -960,8 +1023,8 @@ async function fetchAll() {
               <td class="px-5 py-3"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${c.is_active ? '#d8e723' : '#ef4444'};background:${c.is_active ? 'rgba(216,231,35,0.12)' : 'rgba(239,68,68,0.12)'}">${c.is_active ? 'Activa' : 'Inactiva'}</span></td>
               <td class="px-5 py-3">
                 <div class="flex justify-end gap-1.5">
-                  <button data-action="edit-category" data-id="${c.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-                  <button data-action="delete-category" data-id="${c.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                  <button data-action="edit-category" data-id="${c.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                  <button data-action="delete-category" data-id="${c.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
                 </div>
               </td>
             </tr>`).join('')}
@@ -980,28 +1043,28 @@ async function fetchAll() {
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <p class="text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.2em] mb-4">Evento</p>
           <div class="grid sm:grid-cols-2 gap-4">
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Nombre</label><input name="event_name" value="${esc(s.event_name || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Ubicación</label><input name="event_location" value="${esc(s.event_location || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Fechas Fase 1</label><input name="event_dates_phase1" value="${esc(s.event_dates_phase1 || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Fechas Fase 2</label><input name="event_dates_phase2" value="${esc(s.event_dates_phase2 || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Nombre</label><input name="event_name" value="${esc(s.event_name || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Ubicación</label><input name="event_location" value="${esc(s.event_location || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Fechas Fase 1</label><input name="event_dates_phase1" value="${esc(s.event_dates_phase1 || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Fechas Fase 2</label><input name="event_dates_phase2" value="${esc(s.event_dates_phase2 || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
           </div>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <p class="text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.2em] mb-4">Precios</p>
           <div class="grid sm:grid-cols-2 gap-4">
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Early bird (equipo)</label><input name="early_bird_price_team" type="number" value="${s.early_bird_price_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Regular (equipo)</label><input name="regular_price_team" type="number" value="${s.regular_price_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Bailarín adicional</label><input name="price_extra_dancer" type="number" value="${s.price_extra_dancer || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Límite bailarines/equipo</label><input name="max_dancers_per_team" type="number" value="${s.max_dancers_per_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Early bird (equipo)</label><input name="early_bird_price_team" type="number" value="${s.early_bird_price_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Regular (equipo)</label><input name="regular_price_team" type="number" value="${s.regular_price_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Bailarín adicional</label><input name="price_extra_dancer" type="number" value="${s.price_extra_dancer || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Límite bailarines/equipo</label><input name="max_dancers_per_team" type="number" value="${s.max_dancers_per_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
           </div>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <p class="text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.2em] mb-4">Registro</p>
           <div class="grid sm:grid-cols-2 gap-4">
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Límite early bird</label><input name="early_bird_deadline" type="date" value="${s.early_bird_deadline || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Registro</label><select name="registration_open" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"><option value="true" ${s.registration_open === 'true' ? 'selected' : ''}>Abierto</option><option value="false" ${s.registration_open === 'false' ? 'selected' : ''}>Cerrado</option></select></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">WhatsApp</label><input name="contact_whatsapp" value="${esc(s.contact_whatsapp || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Email</label><input name="contact_email" type="email" value="${esc(s.contact_email || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Límite early bird</label><input name="early_bird_deadline" type="date" value="${s.early_bird_deadline || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Registro</label><select name="registration_open" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"><option value="true" ${s.registration_open === 'true' ? 'selected' : ''}>Abierto</option><option value="false" ${s.registration_open === 'false' ? 'selected' : ''}>Cerrado</option></select></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">WhatsApp</label><input name="contact_whatsapp" value="${esc(s.contact_whatsapp || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
+            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Email</label><input name="contact_email" type="email" value="${esc(s.contact_email || '')}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
           </div>
         </div>
         <div class="flex justify-end"><button type="submit" class="bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] px-8 py-3 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button></div>
@@ -1032,11 +1095,11 @@ async function fetchAll() {
       </div>
       <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
         <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Email</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Nombre</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Rol</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold">Estado</th>
-          <th class="px-5 py-3 text-[10px] text-brand-white-muted/40 uppercase font-extrabold text-right">Acciones</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Email</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Nombre</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Rol</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Estado</th>
+          <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-right">Acciones</th>
         </tr></thead><tbody>
           ${state.adminUsers.map(a => `
             <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
@@ -1046,8 +1109,9 @@ async function fetchAll() {
               <td class="px-5 py-3"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${a.is_active ? '#d8e723' : '#ef4444'};background:${a.is_active ? 'rgba(216,231,35,0.12)' : 'rgba(239,68,68,0.12)'}">${a.is_active ? 'Activo' : 'Inactivo'}</span></td>
               <td class="px-5 py-3">
                 <div class="flex justify-end gap-1.5">
-                  <button data-action="edit-admin" data-id="${a.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-                  <button data-action="delete-admin" data-id="${a.id}" class="p-1.5 rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                  <button data-action="edit-admin" data-id="${a.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                  <button data-action="reset-admin-password" data-id="${a.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors" title="Resetear contraseña"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
+                  <button data-action="delete-admin" data-id="${a.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-red-400 hover:border-red-500/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
                 </div>
               </td>
             </tr>`).join('')}
@@ -1058,36 +1122,81 @@ async function fetchAll() {
   // ============================================================
   // RENDER: REPORTS
   // ============================================================
-  function renderReports(container) {
-    container.innerHTML = `
-      <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-6">Reportes</h2>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <button data-action="export-teams" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
-          <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-          <p class="font-bold text-brand-white text-sm mb-0.5">Exportar equipos</p>
-          <p class="text-[10px] text-brand-white-muted/40">CSV con todos los equipos</p>
-        </button>
-        <button data-action="export-dancers" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
-          <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
-          <p class="font-bold text-brand-white text-sm mb-0.5">Exportar bailarines</p>
-          <p class="text-[10px] text-brand-white-muted/40">CSV con participantes</p>
-        </button>
-        <button data-action="export-payments" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
-          <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-          <p class="font-bold text-brand-white text-sm mb-0.5">Exportar pagos</p>
-          <p class="text-[10px] text-brand-white-muted/40">CSV con transacciones</p>
-        </button>
-      </div>`;
-  }
+   function renderReports(container) {
+     container.innerHTML = `
+       <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-6">Reportes</h2>
+       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+         <button data-action="export-teams" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
+           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+           <p class="font-bold text-brand-white text-sm mb-0.5">Exportar equipos</p>
+           <p class="text-[10px] text-brand-white-muted/60">CSV con todos los equipos</p>
+         </button>
+         <button data-action="export-dancers" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
+           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+           <p class="font-bold text-brand-white text-sm mb-0.5">Exportar bailarines</p>
+           <p class="text-[10px] text-brand-white-muted/60">CSV con participantes</p>
+         </button>
+         <button data-action="export-payments" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
+           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+           <p class="font-bold text-brand-white text-sm mb-0.5">Exportar pagos</p>
+           <p class="text-[10px] text-brand-white-muted/60">CSV con transacciones</p>
+         </button>
+       </div>
+       <h3 class="font-title text-lg font-black text-brand-white mb-4">Log de auditoría</h3>
+       <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
+         <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
+           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Fecha</th>
+           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Admin</th>
+           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Acción</th>
+           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Entidad</th>
+         </tr></thead><tbody>
+           ${(state.auditLog || []).map(a => `
+             <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
+               <td class="px-5 py-3 text-brand-white-muted/70 text-xs">${new Date(a.created_at).toLocaleString('es-MX')}</td>
+               <td class="px-5 py-3 text-brand-white text-xs">${esc(a.details?.email || '—')}</td>
+               <td class="px-5 py-3"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 bg-brand-lime/10 text-brand-lime">${esc(a.action)}</span></td>
+               <td class="px-5 py-3 text-brand-white-muted/70 text-xs">${esc(a.entity_type)} ${a.entity_id || ''}</td>
+             </tr>`).join('') || '<tr><td colspan="4" class="px-5 py-8 text-center text-brand-white-muted/50 text-sm">Sin actividad reciente</td></tr>'}
+         </tbody></table>
+       </div>`;
+   }
 
   // ============================================================
   // MODALS
   // ============================================================
-  function openModal(name) {
-    ['team', 'dancer', 'payment', 'delete'].forEach(n => {
-      $(n + '-modal').classList.toggle('hidden', n !== name);
-    });
-  }
+   function openModal(name) {
+     if (name) {
+       if (_previousActive === null) _previousActive = document.activeElement;
+       const modal = $(name + '-modal');
+       modal.addEventListener('keydown', trapTab);
+       requestAnimationFrame(() => {
+         const first = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+         if (first) first.focus();
+       });
+     } else {
+       document.querySelectorAll('[id$="-modal"]').forEach(m => {
+         m.removeEventListener('keydown', trapTab);
+       });
+     }
+     ['team', 'dancer', 'payment', 'delete', 'import', 'calendar', 'preview', 'category', 'admin'].forEach(n => {
+       $(n + '-modal').classList.toggle('hidden', n !== name);
+     });
+     if (!name && _previousActive) { _previousActive.focus(); _previousActive = null; }
+   }
+
+   function trapTab(e) {
+     if (e.key !== 'Tab') return;
+     const modal = e.currentTarget;
+     const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+     if (!focusable.length) return;
+     const first = focusable[0];
+     const last = focusable[focusable.length - 1];
+     if (e.shiftKey) {
+       if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+     } else {
+       if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+     }
+   }
 
 const catById = (id) => state.categories.find(c => c.id === id) || null;
 
@@ -1176,9 +1285,17 @@ function openDancerModal(teamId, dancer = null) {
   // ============================================================
   // EVENT HANDLERS (delegated)
   // ============================================================
-  document.addEventListener('click', async (e) => {
-    // Close modals
-    if (e.target.closest('[data-close-modal]')) { openModal(null); return; }
+   document.addEventListener('keydown', (e) => {
+     if (e.key === 'Escape') {
+       const openModalNames = ['team', 'dancer', 'payment', 'delete', 'import', 'calendar', 'preview', 'category', 'admin'];
+       const isAnyOpen = openModalNames.some(n => !$(n + '-modal').classList.contains('hidden'));
+       if (isAnyOpen) openModal(null);
+     }
+   });
+
+   document.addEventListener('click', async (e) => {
+     // Close modals
+     if (e.target.closest('[data-close-modal]')) { openModal(null); return; }
     if (e.target.id === 'btn-confirm-delete' && state.deleteTarget) {
       try { await state.deleteTarget(); openModal(null); toast('Eliminado'); } catch (err) { toast(err.message, false); }
       return;
@@ -1226,14 +1343,38 @@ function openDancerModal(teamId, dancer = null) {
         case 'export-dancers': exportCSV('dancers'); break;
         case 'export-payments': exportCSV('payments'); break;
         case 'add-comm': { const msg = prompt('Nota de comunicación:'); if (msg) { await createCommLog({ team_id: teamId, channel: 'in_person', direction: 'outbound', subject: 'Nota manual', message: msg }); delete state.teamData[teamId]; navigate(); toast('Nota registrada'); } break; }
+        case 'import-teams': openImportModal('teams'); break;
+        case 'import-dancers': openImportModal('dancers'); break;
+        case 'view-calendar': openCalendarModal(); break;
+        case 'preview-doc': { const doc = state.teamData[teamId]?.documents?.find(d => d.id === id); if (doc) previewDocument(doc); break; }
+        case 'reset-admin-password': openDeleteModal('Resetear contraseña', 'Se generará una contraseña temporal para este administrador.', async () => { await resetAdminPassword(id); openModal(null); toast('Contraseña reseteada'); }); break;
+        case 'view-audit': { const audit = state.auditLog.filter(a => a.entity_id === id); alert(JSON.stringify(audit, null, 2)); break; }
       }
     } catch (err) { console.error(err); toast(err.message, false); }
   });
 
   // Team form
+  async function uploadTeamLogo(file) {
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const path = `logos/team-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('team-logos').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    const { data } = supabase.storage.from('team-logos').getPublicUrl(path);
+    return { path, url: data.publicUrl };
+  }
+  async function uploadCategoryImage(file) {
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const path = `categories/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('team-logos').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    const { data } = supabase.storage.from('team-logos').getPublicUrl(path);
+    return { path, url: data.publicUrl };
+  }
+
   $('team-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = $('tf-id').value;
+    const logoFile = $('tf-logo').files[0];
     const data = {
       name: $('tf-name').value.trim(),
       origin_city: $('tf-city').value.trim(),
@@ -1246,6 +1387,10 @@ function openDancerModal(teamId, dancer = null) {
       notes: $('tf-notes').value.trim()
     };
     try {
+      if (logoFile) {
+        const { url } = await uploadTeamLogo(logoFile);
+        data.logo_image_url = url;
+      }
       if (id) {
         await updateTeam(id, data);
         const t = state.teams.find(x => x.id === id);
@@ -1282,8 +1427,8 @@ function openDancerModal(teamId, dancer = null) {
   // Carousel form
   $('carousel-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const id = $('cf-id').value;
-    const file = $('cf-file').files[0];
+    const id = $('cfr-id').value;
+    const file = $('cfr-file').files[0];
     let data = {
       title: $('cf-title').value.trim(),
       caption: $('cf-caption').value.trim(),
@@ -1420,6 +1565,7 @@ function openDancerModal(teamId, dancer = null) {
   $('category-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = $('cf-id').value;
+    const imageFile = $('cf-image').files[0];
     const data = {
       name: $('cf-name').value.trim(),
       description: $('cf-description').value.trim(),
@@ -1428,6 +1574,10 @@ function openDancerModal(teamId, dancer = null) {
       is_active: $('cf-active').value === 'true'
     };
     try {
+      if (imageFile) {
+        const { url } = await uploadCategoryImage(imageFile);
+        data.image_url = url;
+      }
       if (id) {
         await updateCategory(id, data);
         const c = state.categories.find(x => x.id === id);
@@ -1575,8 +1725,8 @@ function openDancerModal(teamId, dancer = null) {
           <img src="${esc(c.image_url)}" alt="${esc(c.title || '')}" class="w-full h-full object-cover">
         </div>
         <div class="p-4 space-y-3">
-          <input type="text" data-c-title="${c.id}" value="${esc(c.title || '')}" placeholder="Título (opcional)" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
-          <input type="text" data-c-caption="${c.id}" value="${esc(c.caption || '')}" placeholder="Texto pequeño (opcional)" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
+          <input type="text" data-c-title="${c.id}" value="${esc(c.title || '')}" placeholder="Título (opcional)" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white placeholder:text-brand-white-muted/50 focus:outline-none focus:border-brand-lime/40 transition-colors">
+          <input type="text" data-c-caption="${c.id}" value="${esc(c.caption || '')}" placeholder="Texto pequeño (opcional)" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white placeholder:text-brand-white-muted/50 focus:outline-none focus:border-brand-lime/40 transition-colors">
           <div class="flex items-center gap-2">
             <input type="number" data-c-sort="${c.id}" value="${c.sort_order || 0}" min="0" class="w-20 bg-brand-dark/50 border border-brand-white-faint rounded-lg px-3 py-2 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
             <button data-action="toggle-carousel" data-id="${c.id}" data-field="is_active" class="text-[10px] font-extrabold uppercase tracking-[0.1em] px-2 py-1.5 rounded-lg ${c.is_active !== false ? 'bg-brand-lime/15 text-brand-lime' : 'bg-brand-white-faint/40 text-brand-white-muted/60'}">Activo</button>
@@ -1615,12 +1765,12 @@ function openDancerModal(teamId, dancer = null) {
 
 function openCarouselModal(img = null) {
     $('carousel-modal-title').textContent = img ? 'Editar foto' : 'Subir foto';
-    $('cf-id').value = img?.id || '';
-    $('cf-file').value = '';
-    $('cf-title').value = img?.title || '';
-    $('cf-caption').value = img?.caption || '';
-    $('cf-sort').value = img?.sort_order || 0;
-    $('cf-active').value = img?.is_active !== false ? 'true' : 'false';
+    $('cfr-id').value = img?.id || '';
+    $('cfr-file').value = '';
+    $('cfr-title').value = img?.title || '';
+    $('cfr-caption').value = img?.caption || '';
+    $('cfr-sort').value = img?.sort_order || 0;
+    $('cfr-active').value = img?.is_active !== false ? 'true' : 'false';
     openModal('carousel');
   }
 
@@ -1664,18 +1814,189 @@ function openCarouselModal(img = null) {
   }
 
   // ============================================================
+  // CSV IMPORT
+  // ============================================================
+  function openImportModal(type) {
+    $('import-modal-title').textContent = type === 'teams' ? 'Importar equipos' : 'Importar bailarines';
+    $('import-hint').textContent = type === 'teams'
+      ? 'Columnas: nombre,ciudad,contacto,telefono,email,status,categoria,horario,notas'
+      : 'Columnas: team_id,nombre,tecnica,division,rutina,categoria,email,status';
+    $('import-file').value = '';
+    $('import-preview').classList.add('hidden');
+    openModal('import');
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) return { headers: [], rows: [] };
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+    const rows = lines.slice(1).map(line => {
+      const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+      return obj;
+    });
+    return { headers, rows };
+  }
+
+  $('import-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = $('import-file').files[0];
+    if (!file) { toast('Selecciona un archivo CSV', false); return; }
+    const text = await file.text();
+    const { headers, rows } = parseCSV(text);
+    if (!rows.length) { toast('CSV vacío o mal formato', false); return; }
+
+    const type = $('import-modal-title').textContent.includes('equipos') ? 'teams' : 'dancers';
+    let imported = 0;
+    let errors = 0;
+
+    try {
+      for (const row of rows) {
+        try {
+          if (type === 'teams') {
+            const id = crypto.randomUUID();
+            const { error } = await supabase.from('teams').insert([{
+              id,
+              name: row.nombre || row.name || '',
+              origin_city: row.ciudad || row.city || '',
+              contact_name: row.contacto || row.contact || '',
+              contact_phone: row.telefono || row.phone || '',
+              contact_email: row.email || '',
+              status: row.status || 'pending',
+              category_id: row.categoria || row.category_id || null,
+              scheduled_time: row.horario || row.scheduled_time || null,
+              notes: row.notas || row.notes || '',
+            }]);
+            if (error) throw error;
+            await logAction('import', 'team', id, row);
+            imported++;
+          } else {
+            const { error } = await supabase.from('participants').insert([{
+              team_id: row.team_id || '',
+              full_name: row.nombre || row.name || '',
+              technique: row.tecnica || row.technique || '',
+              division: row.division || '',
+              routine_title: row.rutina || row.routine || '',
+              category_id: row.categoria || row.category_id || null,
+              email: row.email || '',
+              status: row.status || 'pending',
+            }]);
+            if (error) throw error;
+            await logAction('import', 'dancer', row.team_id, row);
+            imported++;
+          }
+        } catch (err) {
+          errors++;
+          console.error('Import row error:', err);
+        }
+      }
+      toast(`Importado: ${imported} (errores: ${errors})`);
+      openModal(null);
+      navigate();
+    } catch (err) {
+      toast('Error en importación', false);
+    }
+  });
+
+  // ============================================================
+  // CALENDAR VIEW
+  // ============================================================
+  function openCalendarModal() {
+    openModal('calendar');
+    $('calendar-grid').innerHTML = '';
+    $('calendar-list').innerHTML = '';
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const grid = $('calendar-grid');
+    const list = $('calendar-list');
+    if (!grid || !list) return;
+
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    grid.innerHTML = days.map(d => `<div class="font-extrabold text-brand-white-muted/60 py-2">${d}</div>`).join('');
+    for (let i = 0; i < firstDay; i++) {
+      grid.innerHTML += '<div class="p-2"></div>';
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dayTeams = state.teams.filter(t => t.scheduled_time && t.scheduled_time.startsWith(dateStr));
+      const hasSchedule = dayTeams.length > 0;
+      grid.innerHTML += `<div class="p-2 min-w-[44px] min-h-[44px] rounded-lg cursor-pointer hover:bg-brand-lime/20 transition-colors ${hasSchedule ? 'bg-brand-lime/10 text-brand-lime font-bold' : 'text-brand-white-muted/50'}">${d}${hasSchedule ? `<span class="block text-[8px]">${dayTeams.length}</span>` : ''}</div>`;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const todayTeams = state.teams.filter(t => t.scheduled_time && t.scheduled_time.startsWith(today));
+    list.innerHTML = todayTeams.length
+      ? todayTeams.map(t => `
+          <div class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm font-bold text-brand-white">${esc(t.name)}</p>
+              <p class="text-[10px] text-brand-white-muted/60">${t.scheduled_time ? new Date(t.scheduled_time).toLocaleString('es-MX') : '—'}</p>
+            </div>
+            <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 bg-brand-lime/10 text-brand-lime">${STATUS_LABELS[t.status]?.label || t.status}</span>
+          </div>`).join('')
+      : '<p class="text-brand-white-muted/50 text-sm text-center py-4">Sin presentaciones hoy</p>';
+  }
+
+  // ============================================================
+  // DOCUMENT PREVIEW
+  // ============================================================
+  function previewDocument(doc) {
+    const content = $('preview-content');
+    const title = $('preview-modal-title');
+    title.textContent = doc.name || 'Vista previa';
+
+    if (doc.mime_type?.startsWith('image/')) {
+      content.innerHTML = `<img src="${esc(doc.file_url)}" class="max-w-full max-h-[60vh] object-contain">`;
+    } else if (doc.mime_type === 'application/pdf') {
+      content.innerHTML = `<iframe src="${esc(doc.file_url)}" class="w-full h-[60vh] rounded-lg border border-brand-white-faint"></iframe>`;
+    } else {
+      content.innerHTML = `<p class="text-brand-white-muted/60 text-sm">Vista previa no disponible para este tipo de archivo</p><p class="text-brand-white-muted/50 text-xs mt-2">${esc(doc.mime_type || 'desconocido')} · ${formatBytes(doc.file_size || 0)}</p>`;
+    }
+    openModal('preview');
+  }
+
+  // ============================================================
+  // RESET PASSWORD ADMIN
+  // ============================================================
+  async function resetAdminPassword(adminId) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const adminUser = state.adminUsers.find(a => a.id === adminId);
+      if (!adminUser) return;
+      const { error } = await supabase.functions.invoke('reset-admin-password', {
+        body: { admin_user_id: adminId },
+      });
+      if (error) throw error;
+      await logAction('reset_password', 'admin', adminId);
+      toast(`Contraseña reseteada para ${adminUser.email}`);
+    } catch (err) {
+      toast(err.message, false);
+    }
+  }
+
+  // ============================================================
   // INIT
   // ============================================================
   (async function init() {
     try {
       await guard();
       await fetchAll();
+      setupSubscriptions();
       renderEventLogo();
       navigate();
       $('auth-loading').classList.add('hidden');
     } catch (err) {
       console.error(err);
-      $('auth-loading').innerHTML = `<div class="text-center space-y-3"><p class="text-red-400 text-sm">Error al cargar</p><p class="text-brand-white-muted/40 text-xs">${esc(err.message)}</p></div>`;
+      $('auth-loading').innerHTML = `<div class="text-center space-y-3"><p class="text-red-400 text-sm">Error al cargar</p><p class="text-brand-white-muted/60 text-xs">${esc(err.message)}</p></div>`;
     }
   })();
 
