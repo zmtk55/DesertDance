@@ -1628,18 +1628,19 @@ function openDancerModal(teamId, dancer = null) {
     };
     try {
       if (id) {
-        if (data.password) {
+        const { password, ...updateData } = data;
+        if (password) {
           await supabase.functions.invoke('reset-admin-password', {
-            body: { admin_user_id: id, tempPassword: data.password },
+            body: { admin_user_id: id, tempPassword: password },
           });
         }
-        await updateAdminUser(id, data);
+        await updateAdminUser(id, updateData);
         const a = state.adminUsers.find(x => x.id === id);
-        Object.assign(a, data);
+        Object.assign(a, updateData);
         toast('Administrador actualizado');
       } else {
         const res = await createAdminUser(data);
-        state.adminUsers.push({ id: res.userId, ...data });
+        state.adminUsers.push({ id: res.userId, email: data.email, name: data.name, role: data.role });
         toast(`Admin creado. Email: ${data.email} | Pass: ${data.password}`, true, 10000);
       }
       openModal(null);
