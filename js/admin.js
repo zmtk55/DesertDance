@@ -267,7 +267,14 @@ async function fetchAll() {
       body: { email: data.email, name: data.name, role: data.role, password: data.password },
     });
     console.log('create-admin result:', { result, fnErr });
-    if (fnErr) throw new Error(`Function error: ${JSON.stringify(fnErr)}`);
+    if (fnErr) {
+      let msg = fnErr.message || 'Error de función';
+      if (fnErr.context?.response) {
+        const resJson = await fnErr.context.response.json().catch(() => null);
+        if (resJson?.error) msg = resJson.error + (resJson.details ? ` (${JSON.stringify(resJson.details)})` : '');
+      }
+      throw new Error(msg);
+    }
     if (!result?.ok) throw new Error(result?.error || 'Error al crear administrador');
     return { userId: result.userId };
   }
