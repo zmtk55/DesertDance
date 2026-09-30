@@ -266,7 +266,9 @@ async function fetchAll() {
     const { data: result, error: fnErr } = await supabase.functions.invoke('create-admin', {
       body: { email: data.email, name: data.name, role: data.role, password: data.password },
     });
-    if (fnErr || !result?.ok) throw new Error(result?.error || 'Error al crear administrador');
+    console.log('create-admin result:', { result, fnErr });
+    if (fnErr) throw new Error(`Function error: ${JSON.stringify(fnErr)}`);
+    if (!result?.ok) throw new Error(result?.error || 'Error al crear administrador');
     return { userId: result.userId };
   }
 
