@@ -19,9 +19,14 @@ Deno.serve(async (req) => {
 
   try {
     let body;
-    try { body = await req.json(); } catch {
-      return new Response(JSON.stringify({ ok: false, error: 'Body inválido' }), { status: 400, headers });
-    }
+  let body;
+  try {
+    body = await req.json();
+    console.log('Parsed body:', body);
+  } catch (e) {
+    console.error('Body parse error:', e);
+    return new Response(JSON.stringify({ ok: false, error: 'Body inválido', details: String(e) }), { status: 400, headers });
+  }
 
     const { email, name, role, password } = body || {};
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

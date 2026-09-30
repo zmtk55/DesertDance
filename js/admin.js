@@ -1451,10 +1451,10 @@ function openDancerModal(teamId, dancer = null) {
     const id = $('cfr-id').value;
     const file = $('cfr-file').files[0];
     let data = {
-      title: $('cf-title').value.trim(),
-      caption: $('cf-caption').value.trim(),
-      sort_order: parseInt($('cf-sort').value, 10) || 0,
-      is_active: $('cf-active').value === 'true'
+      title: $('cfr-title').value.trim(),
+      caption: $('cfr-caption').value.trim(),
+      sort_order: parseInt($('cfr-sort').value, 10) || 0,
+      is_active: $('cfr-active').value === 'true'
     };
     try {
       if (file) {
@@ -1470,7 +1470,8 @@ function openDancerModal(teamId, dancer = null) {
       } else {
         if (!file) { toast('Debes seleccionar una foto', false); return; }
         const newId = await createCarousel(data);
-        state.carousel.unshift({ id: newId, ...data });
+        data.id = newId;
+        state.carousel.unshift(data);
         toast('Foto subida');
       }
       openModal(null);
@@ -1730,8 +1731,9 @@ function openDancerModal(teamId, dancer = null) {
   }
 
   async function createCarousel(data) {
-    const { error } = await supabase.from('carousel_images').insert([data]);
+    const { data: created, error } = await supabase.from('carousel_images').insert([data]).select('id').single();
     if (error) throw error;
+    return created?.id;
   }
   async function updateCarousel(id, data) {
     const { error } = await supabase.from('carousel_images').update(data).eq('id', id);

@@ -18,7 +18,10 @@ Deno.serve(async (req) => {
   }
 
   let body;
-  try { body = await req.json(); } catch {
+  try {
+    const rawBody = await req.text();
+    body = JSON.parse(rawBody);
+  } catch {
     return new Response(JSON.stringify({ ok: false, error: 'Body inválido' }), { status: 400, headers });
   }
 
