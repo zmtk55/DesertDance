@@ -1161,9 +1161,11 @@ async function fetchAll() {
        </div>`;
    }
 
-  // ============================================================
+// ============================================================
   // MODALS
   // ============================================================
+   let _previousActive = null;
+
    function openModal(name) {
      if (name) {
        if (_previousActive === null) _previousActive = document.activeElement;
