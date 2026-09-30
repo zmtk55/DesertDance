@@ -13,12 +13,15 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: 'Body inválido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
-  const { email, name, role } = body || {};
+  const { email, name, role, password } = body || {};
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return new Response(JSON.stringify({ ok: false, error: 'Email inválido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
   if (!name || !name.trim()) {
     return new Response(JSON.stringify({ ok: false, error: 'Nombre requerido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  }
+  if (!password || password.trim().length < 8) {
+    return new Response(JSON.stringify({ ok: false, error: 'Contraseña requerida (mínimo 8 caracteres)' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
   const supabase = createClient(
@@ -26,12 +29,10 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
-  const tempPassword = crypto.randomUUID().slice(0, 16);
-
   // 1. Crear usuario en auth
   const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
     email: email.trim(),
-    password: tempPassword,
+    password: password.trim(),
     email_confirm: true,
     user_metadata: { full_name: name.trim() },
   });
@@ -57,5 +58,5 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: 'No se pudo registrar el administrador' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 
-  return new Response(JSON.stringify({ ok: true, userId, email: email.trim(), tempPassword }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ ok: true, userId, email: email.trim() }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 });

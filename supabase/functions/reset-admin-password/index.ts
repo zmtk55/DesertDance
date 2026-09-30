@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: 'Body inválido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
-  const { admin_user_id } = body || {};
+  const { admin_user_id, tempPassword } = body || {};
   if (!admin_user_id) {
     return new Response(JSON.stringify({ ok: false, error: 'Falta el ID de administrador' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
@@ -34,12 +34,12 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: 'Administrador no encontrado' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
   }
 
-  // 2. Generar contraseña temporal
-  const tempPassword = crypto.randomUUID().slice(0, 12);
+  // 2. Usar contraseña personalizada o generar una temporal
+  const password = tempPassword || crypto.randomUUID().slice(0, 12);
 
   // 3. Resetear contraseña en auth
   const { error: resetErr } = await supabase.auth.admin.updateUserById(admin.id, {
-    password: tempPassword,
+    password: password,
   });
 
   if (resetErr) {
@@ -50,6 +50,6 @@ Deno.serve(async (req) => {
   return new Response(JSON.stringify({
     ok: true,
     email: admin.email,
-    tempPassword,
+    tempPassword: password,
   }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 });

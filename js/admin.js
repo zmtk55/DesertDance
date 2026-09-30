@@ -264,10 +264,10 @@ async function fetchAll() {
 
   async function createAdminUser(data) {
     const { data: result, error: fnErr } = await supabase.functions.invoke('create-admin', {
-      body: { email: data.email, name: data.name, role: data.role },
+      body: { email: data.email, name: data.name, role: data.role, password: data.password },
     });
     if (fnErr || !result?.ok) throw new Error(result?.error || 'Error al crear administrador');
-    return { userId: result.userId, tempPassword: result.tempPassword };
+    return { userId: result.userId };
   }
 
   async function updateAdminUser(id, data) {
@@ -1274,7 +1274,9 @@ function openDancerModal(teamId, dancer = null) {
     $('af-name').value = admin?.name || '';
     $('af-role').value = admin?.role || 'admin';
     $('af-active').value = admin?.is_active !== false ? 'true' : 'false';
-    $('admin-password-section').classList.toggle('hidden', !admin);
+    $('af-password').value = '';
+    $('af-password').required = !admin;
+    $('admin-password-section').classList.toggle('hidden', !!admin);
     openModal('admin');
   }
 
@@ -1612,10 +1614,16 @@ function openDancerModal(teamId, dancer = null) {
       email: $('af-email').value.trim(),
       name: $('af-name').value.trim(),
       role: $('af-role').value,
-      is_active: $('af-active').value === 'true'
+      is_active: $('af-active').value === 'true',
+      password: $('af-password').value.trim(),
     };
     try {
       if (id) {
+        if (data.password) {
+          await supabase.functions.invoke('reset-admin-password', {
+            body: { admin_user_id: id, tempPassword: data.password },
+          });
+        }
         await updateAdminUser(id, data);
         const a = state.adminUsers.find(x => x.id === id);
         Object.assign(a, data);
@@ -1623,7 +1631,7 @@ function openDancerModal(teamId, dancer = null) {
       } else {
         const res = await createAdminUser(data);
         state.adminUsers.push({ id: res.userId, ...data });
-        toast(`Admin creado. Email: ${data.email} | Pass: ${res.tempPassword}`, true, 10000);
+        toast(`Admin creado. Email: ${data.email} | Pass: ${data.password}`, true, 10000);
       }
       openModal(null);
       navigate();
