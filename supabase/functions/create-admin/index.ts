@@ -57,5 +57,5 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: 'No se pudo registrar el administrador' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 
-  return new Response(JSON.stringify({ ok: true, userId, email: email.trim() }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ ok: true, userId, email: email.trim(), tempPassword }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 });

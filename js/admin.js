@@ -77,12 +77,12 @@
     return bytes + ' B';
   }
 
-  function toast(msg, ok = true) {
+  function toast(msg, ok = true, duration = 3000) {
     const t = $('toast');
     t.textContent = msg;
     t.className = `toast fixed bottom-6 inset-x-4 sm:inset-x-auto sm:right-6 mx-auto w-fit max-w-full text-center z-[70] px-5 py-3 rounded-xl text-sm font-semibold border ${ok ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-red-500/15 border-red-500/30 text-red-400'} shadow-[0_0_30px_rgba(0,0,0,0.4)]`;
     t.classList.remove('hidden');
-    setTimeout(() => t.classList.add('hidden'), 3000);
+    setTimeout(() => t.classList.add('hidden'), duration);
   }
 
   function addRecentTeam(team) {
@@ -267,7 +267,7 @@ async function fetchAll() {
       body: { email: data.email, name: data.name, role: data.role },
     });
     if (fnErr || !result?.ok) throw new Error(result?.error || 'Error al crear administrador');
-    return result.userId;
+    return { userId: result.userId, tempPassword: result.tempPassword };
   }
 
   async function updateAdminUser(id, data) {
@@ -1274,6 +1274,7 @@ function openDancerModal(teamId, dancer = null) {
     $('af-name').value = admin?.name || '';
     $('af-role').value = admin?.role || 'admin';
     $('af-active').value = admin?.is_active !== false ? 'true' : 'false';
+    $('admin-password-section').classList.toggle('hidden', !admin);
     openModal('admin');
   }
 
@@ -1353,6 +1354,13 @@ function openDancerModal(teamId, dancer = null) {
         case 'view-audit': { const audit = state.auditLog.filter(a => a.entity_id === id); alert(JSON.stringify(audit, null, 2)); break; }
       }
     } catch (err) { console.error(err); toast(err.message, false); }
+  });
+
+  // Reset admin password from modal
+  $('reset-admin-pw-btn').addEventListener('click', async () => {
+    const adminId = $('af-id').value;
+    if (!adminId) return;
+    await resetAdminPassword(adminId);
   });
 
   // Team form
@@ -1596,7 +1604,7 @@ function openDancerModal(teamId, dancer = null) {
     } catch (err) { toast(err.message, false); }
   });
 
-  // Admin form
+   // Admin form
   $('admin-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = $('af-id').value;
@@ -1613,9 +1621,9 @@ function openDancerModal(teamId, dancer = null) {
         Object.assign(a, data);
         toast('Administrador actualizado');
       } else {
-        const newId = await createAdminUser(data);
-        state.adminUsers.push({ id: newId, ...data });
-        toast('Administrador creado');
+        const res = await createAdminUser(data);
+        state.adminUsers.push({ id: res.userId, ...data });
+        toast(`Admin creado. Email: ${data.email} | Pass: ${res.tempPassword}`, true, 10000);
       }
       openModal(null);
       navigate();
@@ -1971,15 +1979,16 @@ function openCarouselModal(img = null) {
   // ============================================================
   async function resetAdminPassword(adminId) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const adminUser = state.adminUsers.find(a => a.id === adminId);
       if (!adminUser) return;
-      const { error } = await supabase.functions.invoke('reset-admin-password', {
+      const { data, error } = await supabase.functions.invoke('reset-admin-password', {
         body: { admin_user_id: adminId },
       });
       if (error) throw error;
+      if (data?.tempPassword) {
+        toast(`Contraseña: ${data.tempPassword} | Email: ${data.email}`, true, 10000);
+      }
       await logAction('reset_password', 'admin', adminId);
-      toast(`Contraseña reseteada para ${adminUser.email}`);
     } catch (err) {
       toast(err.message, false);
     }

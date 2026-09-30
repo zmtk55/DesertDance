@@ -40,7 +40,6 @@ Deno.serve(async (req) => {
   // 3. Resetear contraseña en auth
   const { error: resetErr } = await supabase.auth.admin.updateUserById(admin.id, {
     password: tempPassword,
-    email_change_token: '',
   });
 
   if (resetErr) {
@@ -48,19 +47,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: 'Error al resetear contraseña' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 
-  // 4. Enviar email con la nueva contraseña
-  const { error: emailErr } = await supabase.auth.admin.generateLink({
-    type: 'magiclink',
-    email: admin.email,
-    options: {
-      email_redirect_to: `${Deno.env.get('SITE_URL') || 'https://stvzqomqqkascrgxujmb.supabase.co'}/login`,
-    },
-  });
-
   return new Response(JSON.stringify({
     ok: true,
     email: admin.email,
     tempPassword,
-    message: `Contraseña temporal generada. Enviar manualmente: ${tempPassword}`,
   }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 });
