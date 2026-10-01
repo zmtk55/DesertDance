@@ -403,8 +403,8 @@ async function fetchAll() {
         case 'settings': renderSettings(main); break;
         case 'admins': renderAdmins(main); break;
         case 'reports': renderReports(main); break;
-        case 'carousel': renderCarousel(); break;
-        case 'logo-evento': renderEventLogo(); break;
+        case 'carousel': renderCarousel(main); break;
+        case 'logo-evento': renderEventLogo(main); break;
       }
     } catch (err) {
       console.error(err);
@@ -797,7 +797,7 @@ async function fetchAll() {
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Contacto</span><span class="text-brand-white font-medium">${esc(team.contact_name || '—')}</span></div>
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Teléfono</span><span class="text-brand-white font-medium">${esc(team.contact_phone || '—')}</span></div>
             <div class="flex justify-between"><span class="text-brand-white-muted/50">Email</span><span class="text-brand-white font-medium">${esc(team.contact_email || '—')}</span></div>
-            <div class="flex justify-between"><span class="text-brand-white-muted/50">Categoría</span><span class="text-brand-white font-medium">${esc(catById(team.category_id)?.name || '—')}</span></div>
+             <div class="flex justify-between"><span class="text-brand-white-muted/50">Modalidad</span><span class="text-brand-white font-medium">${esc(catById(team.category_id)?.name || '—')}</span></div>
           </div>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
@@ -1039,7 +1039,7 @@ async function fetchAll() {
   function renderCategories(container) {
     container.innerHTML = `
       <div class="flex items-center justify-between mb-6">
-        <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Categorías</h2>
+        <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Modalidades</h2>
         <button data-action="add-category" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Agregar
@@ -1468,7 +1468,7 @@ function openDancerModal(teamId, dancer = null) {
       await upsertEventLogo({ label, image_path: path, image_url: url });
       const { data } = await supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle();
       state.eventLogo = data || null;
-      renderEventLogo();
+      renderEventLogo($('main-content'));
       openModal(null);
       toast('Logo actualizado');
     } catch (err) { toast(err.message, false); }
@@ -1773,7 +1773,24 @@ function openDancerModal(teamId, dancer = null) {
     if (error) throw error;
   }
 
-  function renderCarousel() {
+  function renderCarousel(container) {
+    container.innerHTML = `
+      <div class="mb-8">
+        <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-1">Fotos del <span class="italic-display italic text-brand-lime font-light">landing</span></h2>
+        <p class="text-brand-white-muted/60 text-xs mt-1">Imágenes que se reproducen en el hero de Desert Dance. Sube tantas como quieras; la primera es la que se muestra al cargar.</p>
+      </div>
+      <div class="flex items-center justify-between mb-6">
+        <button data-action="add-carousel" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Subir foto
+        </button>
+      </div>
+      <div id="carousel-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Se inyecta por JS -->
+      </div>
+      <p id="carousel-empty" class="text-center py-16 text-brand-white-muted/50 text-sm">Aún no hay fotos en el carrusel. Haz clic en "Subir foto".</p>
+    `;
+    
     const list = $('carousel-list');
     const empty = $('carousel-empty');
     if (!state.carousel.length) { if (empty) empty.classList.remove('hidden'); if (list) list.innerHTML = ''; return; }
@@ -1851,7 +1868,30 @@ function openCarouselModal(img = null) {
     if (error) throw error;
   }
 
-  function renderEventLogo() {
+  function renderEventLogo(container) {
+    container.innerHTML = `
+      <div class="mb-8">
+        <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Logo del <span class="italic-display italic text-brand-lime font-light">evento</span></h2>
+        <p class="text-brand-white-muted/60 text-xs mt-1">Logo que se muestra en el hero del landing. Sube el logotipo de Desert Dance (SVG o PNG).</p>
+      </div>
+      <div class="flex items-center justify-between mb-6">
+        <button data-action="edit-logo-evento" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3 3 6v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 1 2-2"/></svg>
+          Subir o cambiar logo
+        </button>
+      </div>
+      <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6 flex flex-col sm:flex-row items-center gap-6">
+        <div class="w-40 h-40 rounded-2xl bg-brand-dark/60 border border-brand-white-faint flex items-center justify-center p-4">
+          <img id="admin-event-logo" src="assets/logos/vertical_primary.svg" alt="Logo del evento" class="max-w-full max-h-full object-contain">
+        </div>
+        <div class="flex-1">
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Logo actual</p>
+          <p id="admin-event-logo-url" class="text-brand-white text-sm font-medium break-all">assets/logos/vertical_primary.svg</p>
+          <p class="text-[10px] text-brand-white-muted/50 mt-2">Recomendado: SVG con fondo transparente. Tamaño recomendado: 300×300 px o superior.</p>
+        </div>
+      </div>
+    `;
+    
     const urlEl = $('admin-event-logo-url');
     const imgEl = $('admin-event-logo');
     if (!urlEl || !imgEl) return;
@@ -2051,7 +2091,7 @@ function openCarouselModal(img = null) {
       await guard();
       await fetchAll();
       setupSubscriptions();
-      renderEventLogo();
+      renderEventLogo(document.getElementById('main-content') || document.createElement('div'));
       navigate();
       $('auth-loading').classList.add('hidden');
     } catch (err) {

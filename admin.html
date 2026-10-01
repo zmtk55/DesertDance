@@ -124,7 +124,7 @@
         <p class="text-[9px] text-brand-white-muted/50 uppercase tracking-[0.2em] font-extrabold px-4 pt-3 pb-1">Configuración</p>
         <a href="#categories" data-nav="categories" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          Categorías
+          Modalidades
         </a>
         <a href="#settings" data-nav="settings" class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -210,9 +210,9 @@
         </div>
         <div class="grid sm:grid-cols-2 gap-4 mt-4">
           <div>
-            <label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Categoría</label>
+            <label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Modalidad</label>
             <select id="tf-category" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
-              <option value="">Sin categoría</option>
+              <option value="">Sin modalidad</option>
             </select>
           </div>
           <div>
@@ -273,9 +273,9 @@
           <input id="df-routine" type="text" placeholder="Título de la rutina" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/25 focus:outline-none focus:border-brand-lime/40 transition-colors">
         </div>
         <div>
-          <label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Categoría de competencia</label>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Modalidad de competencia</label>
           <select id="df-category" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
-            <option value="">— Sin categoría —</option>
+            <option value="">— Sin modalidad —</option>
           </select>
         </div>
         <div class="flex gap-3 pt-2">
@@ -374,12 +374,12 @@
     </div>
   </div>
 
-  <!-- Modal: Categoría -->
+  <!-- Modal: Modalidad -->
   <div id="category-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal="category"></div>
     <div class="relative bg-brand-dark-elevated rounded-3xl border border-brand-white-faint p-6 w-full max-w-md shadow-[0_0_80px_rgba(0,0,0,0.6)]">
       <div class="flex items-center justify-between mb-6">
-        <h3 id="category-modal-title" class="font-title text-xl font-black text-brand-white">Agregar categoría</h3>
+        <h3 id="category-modal-title" class="font-title text-xl font-black text-brand-white">Agregar modalidad</h3>
         <button data-close-modal="category" class="text-brand-white-muted/60 hover:text-brand-white transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -387,7 +387,7 @@
       <form id="category-form" class="space-y-4" enctype="multipart/form-data">
         <input type="hidden" id="cf-id">
         <div>
-          <label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Imagen de la categoría (opcional)</label>
+          <label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Imagen de la modalidad (opcional)</label>
           <input id="cf-image" name="image" type="file" accept="image/svg+xml,image/png,image/jpeg" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-lime file:text-brand-dark file:font-extrabold file:text-xs file:uppercase file:tracking-[0.1em] hover:file:bg-brand-lime-hover focus:outline-none focus:border-brand-lime/40 transition-colors">
           <p class="text-[10px] text-brand-white-muted/50 mt-1">SVG, PNG o JPG. Se guarda en el bucket team-logos.</p>
         </div>
@@ -397,7 +397,7 @@
         </div>
         <div>
           <label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Descripción</label>
-          <textarea id="cf-description" rows="2" placeholder="Descripción corta de la categoría" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/50 focus:outline-none focus:border-brand-lime/40 transition-colors resize-none"></textarea>
+          <textarea id="cf-description" rows="2" placeholder="Descripción corta de la modalidad" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white placeholder:text-brand-white-muted/50 focus:outline-none focus:border-brand-lime/40 transition-colors resize-none"></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -475,29 +475,12 @@
           <button type="button" data-close-modal="admin" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-sm py-3 rounded-xl hover:text-brand-white transition-colors">Cancelar</button>
           <button type="submit" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-3 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
         </div>
-      </form>
-</div>
-    </div>
-
-    <!-- Modal: Carrusel del landing -->
-    <section id="carousel" class="py-16 md:py-24 px-6 md:px-16 max-w-7xl mx-auto">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Fotos del <span class="italic-display italic text-brand-lime font-light">landing</span></h2>
-          <p class="text-brand-white-muted/60 text-xs mt-1">Imágenes que se reproducen en el hero de Desert Dance. Sube tantas como quieras; la primera es la que se muestra al cargar.</p>
-        </div>
-        <button data-action="add-carousel" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Subir foto
-        </button>
+       </form>
       </div>
-      <div id="carousel-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Se inyecta por JS -->
-      </div>
-      <p id="carousel-empty" class="text-center py-16 text-brand-white-muted/50 text-sm">Aún no hay fotos en el carrusel. Haz clic en "Subir foto".</p>
-    </section>
+     </div>
+   </div>
 
-    <!-- Modal: subir/Editar foto del carrusel -->
+     <!-- Modal: subir/Editar foto del carrusel -->
     <div id="carousel-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="carousel-modal-title">
       <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal="carousel"></div>
       <div class="relative bg-brand-dark-elevated rounded-3xl border border-brand-white-faint p-6 w-full max-w-lg shadow-[0_0_80px_rgba(0,0,0,0.6)]">
@@ -541,30 +524,6 @@
         </form>
       </div>
     </div>
-
-    <!-- Logo del evento (hero) -->
-    <section id="logo-evento" class="py-16 md:py-24 px-6 md:px-16 max-w-7xl mx-auto">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Logo del <span class="italic-display italic text-brand-lime font-light">evento</span></h2>
-          <p class="text-brand-white-muted/60 text-xs mt-1">Logo que se muestra en el hero del landing. Sube el logotipo de Desert Dance (SVG o PNG).</p>
-        </div>
-        <button data-action="edit-logo-evento" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-         Subir o cambiar logo
-        </button>
-      </div>
-      <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6 flex flex-col sm:flex-row items-center gap-6">
-        <div class="w-40 h-40 rounded-2xl bg-brand-dark/60 border border-brand-white-faint flex items-center justify-center p-4">
-          <img id="admin-event-logo" src="assets/logos/vertical_primary.svg" alt="Logo del evento" class="max-w-full max-h-full object-contain">
-        </div>
-        <div class="flex-1">
-          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Logo actual</p>
-          <p id="admin-event-logo-url" class="text-brand-white text-sm font-medium break-all">assets/logos/vertical_primary.svg</p>
-          <p class="text-[10px] text-brand-white-muted/50 mt-2">Recomendado: SVG con fondo transparente. Tamaño recomendado: 300×300 px o superior.</p>
-        </div>
-      </div>
-    </section>
 
     <!-- Modal: logo del evento -->
     <div id="logo-evento-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="logo-evento-modal-title">
