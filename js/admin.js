@@ -391,6 +391,7 @@ async function fetchAll() {
     updateSidebar();
     
     const main = $('main-content');
+    main.scrollIntoView({ behavior: 'smooth', block: 'start' });
     main.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-2 border-brand-lime/30 border-t-brand-lime rounded-full animate-spin"></div></div>';
     
     try {
