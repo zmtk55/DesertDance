@@ -1044,7 +1044,7 @@ async function fetchAll() {
     container.innerHTML = `
       <div class="flex items-center justify-between mb-6">
         <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Modalidades</h2>
-        <button data-action="add-category" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+         <button data-action="add-category" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Agregar
         </button>
@@ -1299,7 +1299,7 @@ function openDancerModal(teamId, dancer = null) {
   }
 
   function openCategoryModal(cat = null) {
-    $('category-modal-title').textContent = cat ? 'Editar categoría' : 'Agregar categoría';
+    $('category-modal-title').textContent = cat ? 'Editar modalidad' : 'Agregar modalidad';
     $('cf-id').value = cat?.id || '';
     $('cf-name').value = cat?.name || '';
     $('cf-description').value = cat?.description || '';
@@ -1381,7 +1381,7 @@ function openDancerModal(teamId, dancer = null) {
         case 'delete-payment': openDeleteModal('¿Eliminar pago?', 'Esta acción no se puede deshacer.', async () => { await deletePayment(id); const tid = resolveRoute().teamId; delete state.teamData[tid]; navigate(); }); break;
         case 'add-category': openCategoryModal(); break;
         case 'edit-category': { const c = state.categories.find(x => x.id === id); if (c) openCategoryModal(c); break; }
-        case 'delete-category': openDeleteModal('¿Eliminar categoría?', 'Esta acción no se puede deshacer.', async () => { await deleteCategory(id); state.categories = state.categories.filter(x => x.id !== id); navigate(); toast('Categoría eliminada'); }); break;
+        case 'delete-category': openDeleteModal('¿Eliminar modalidad?', 'Esta acción no se puede deshacer.', async () => { await deleteCategory(id); state.categories = state.categories.filter(x => x.id !== id); navigate(); toast('Modalidad eliminada'); }); break;
         case 'add-admin': openAdminModal(); break;
         case 'edit-admin': { const a = state.adminUsers.find(x => x.id === id); if (a) openAdminModal(a); break; }
         case 'delete-admin': openDeleteModal('¿Eliminar administrador?', 'Esta acción no se puede deshacer.', async () => { await deleteAdminUser(id); state.adminUsers = state.adminUsers.filter(x => x.id !== id); navigate(); toast('Administrador eliminado'); }); break;

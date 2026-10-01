@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!name) { showError('Escribe el nombre del estudio o equipo.'); return false; }
       if (!contact) { showError('Escribe el nombre del capitán o representante.'); return false; }
       if (!email) { showError('Escribe el correo del contacto.'); return false; }
-      if (!category) { showError('Selecciona la categoría de competencia.'); return false; }
+      if (!category) { showError('Selecciona la modalidad de competencia.'); return false; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Revisa el correo: parece no ser válido.'); return false; }
       return true;
     }
