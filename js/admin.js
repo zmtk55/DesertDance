@@ -934,7 +934,10 @@ async function fetchAll() {
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <div class="flex items-center justify-between mb-4">
             <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Presentación</p>
-            <button data-action="edit-schedule" data-team="${team.id}" class="text-[10px] font-bold uppercase tracking-wider text-brand-lime hover:underline">Editar</button>
+            <button data-action="edit-schedule" data-team="${team.id}" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              Editar horario
+            </button>
           </div>
           <div id="schedule-display">
             ${sched ? `<div class="flex items-center gap-4"><div class="w-14 h-14 rounded-xl bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center"><span class="font-title text-2xl font-black text-brand-lime">${sched.getDate()}</span></div><div><p class="font-title text-lg font-bold text-brand-white">${sched.toLocaleDateString('es-MX', { weekday: 'long', month: 'long', year: 'numeric' })}</p><p class="text-brand-white-muted/50 text-sm">${sched.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} hrs</p></div></div>` : '<p class="text-brand-white-muted/50 text-sm text-center py-6">Sin horario asignado</p>'}
