@@ -154,20 +154,49 @@ async function fetchAll() {
   async function fetchTeamData(teamId) {
     if (state.teamData[teamId]) return state.teamData[teamId];
     
-    const [payments, docs, comms] = await Promise.all([
+    const [team, payments, docs, comms] = await Promise.all([
+      supabase.from('teams').select('logo_url, music_url, logo_path, music_path, name').eq('id', teamId).single(),
       supabase.from('payments').select('*').eq('team_id', teamId).order('created_at', { ascending: false }),
       supabase.from('documents').select('*').eq('team_id', teamId).order('uploaded_at', { ascending: false }),
       supabase.from('communication_log').select('*').eq('team_id', teamId).order('sent_at', { ascending: false })
     ]);
     
     const paymentsData = payments.data || [];
+    const docsData = docs.data || [];
+    
+    // Agregar logo y música del equipo como documentos virtuales
+    if (team.data) {
+      if (team.data.logo_url) {
+        docsData.unshift({
+          id: `logo-${teamId}`,
+          name: 'Logo del estudio',
+          type: 'logo',
+          file_url: team.data.logo_url,
+          file_path: team.data.logo_path,
+          file_size: 0,
+          mime_type: 'image/png'
+        });
+      }
+      if (team.data.music_url) {
+        docsData.unshift({
+          id: `music-${teamId}`,
+          name: 'Música de rutina',
+          type: 'music',
+          file_url: team.data.music_url,
+          file_path: team.data.music_path,
+          file_size: 0,
+          mime_type: 'audio/mpeg'
+        });
+      }
+    }
+    
     state.teamData[teamId] = {
       payments: {
         all: paymentsData,
         paid: paymentsData.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount), 0),
         pending: paymentsData.filter(p => !['completed', 'refunded'].includes(p.status)).reduce((s, p) => s + Number(p.amount), 0)
       },
-      documents: docs.data || [],
+      documents: docsData,
       communications: comms.data || []
     };
     

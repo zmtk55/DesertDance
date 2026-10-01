@@ -82,11 +82,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       return true;
     }
     if (step === 2) {
-      const logo = form.querySelector('#team-logo').files[0];
       const music = form.querySelector('#team-music').files[0];
-      if (!logo) { showError('Sube el logo de tu estudio para continuar.'); return false; }
       if (!music) { showError('Sube la música de tu rutina para continuar.'); return false; }
-      if (logo.size > 20 * 1024 * 1024) { showError('El archivo del logo supera los 20 MB. Compáctalo o envíanoslo por WhatsApp.'); return false; }
       if (music.size > 20 * 1024 * 1024) { showError('El archivo de música supera los 20 MB. Compáctalo o envíanoslo por WhatsApp.'); return false; }
       return true;
     }
@@ -246,10 +243,12 @@ const teamName = form.querySelector('#team-name').value.trim();
     })).filter(d => d.full_name);
 
     try {
-      const [logo, music] = await Promise.all([
-        uploadFile(logoFile, 'logo', 'logos'),
-        uploadFile(musicFile, 'music', 'music')
-      ]);
+      const music = await uploadFile(musicFile, 'music', 'music');
+
+      let logo = { path: null, url: null };
+      if (logoFile) {
+        logo = await uploadFile(logoFile, 'logo', 'logos');
+      }
 
       const teamId = newUuid();
       const { error: teamErr } = await supabase
@@ -290,7 +289,7 @@ const teamName = form.querySelector('#team-name').value.trim();
       console.error(err);
       btn.innerHTML = originalHTML;
       btn.disabled = false;
-      showError('Ocurrió un error al enviar tu registro. Revisa que el logo y la música sean válidos e inténtalo de nuevo, o contáctanos por WhatsApp.');
+      showError('Ocurrió un error al enviar tu registro. Revisa que la música sea válida e inténtalo de nuevo, o contáctanos por WhatsApp.');
     }
   });
 
