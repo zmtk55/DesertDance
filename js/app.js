@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const form = document.getElementById('registration-form');
   if (!form) return;
 
-  // Cargar categorías de competencia desde la BD y poblar el dropdown.
+  // Cargar modalidades de competencia desde la BD y poblar el dropdown.
   const categorySelect = document.getElementById('team-category');
   if (categorySelect) {
     try {
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
       }
     } catch (e) {
-      console.warn('No se pudieron cargar las categorías:', e);
+      console.warn('No se pudieron cargar las modalidades:', e);
     }
   }
 
