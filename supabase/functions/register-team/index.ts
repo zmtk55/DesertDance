@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
     contact_phone: String(team?.contact_phone || '').trim(),
     contact_email: email,
     category_id: team?.category_id || null,
+    age_category: team?.age_category || '',
     logo_path: logo_path || '',
     logo_url: logo_url || '',
     music_path: music_path || '',
@@ -109,8 +110,8 @@ Deno.serve(async (req) => {
     await supabase.from('participants').insert(
       dancers.map(d => ({
         full_name: String(d?.full_name || '').trim(),
-        technique: String(d?.technique || '').trim(),
-        division: String(d?.division || '').trim(),
+        genre: String(d?.genre || '').trim(),
+        modality_level: String(d?.modality_level || '').trim(),
         category_id: team?.category_id || null,
         team_id: teamId,
         email,

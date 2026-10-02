@@ -1,6 +1,9 @@
 -- Desert Dance: seed modalidades (categories) con los nombres correctos y precios
 -- Ejecutar después de 20260908000600_category_fk.sql (que crea la tabla categories)
 
+-- Agregar columna para categoría por edad si no existe
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
+
 INSERT INTO categories (id, name, description, max_participants, sort_order, is_active, metadata)
 VALUES
   ('a1b2c3d4-e101-4001-8001-000000000001', 'Solista', 'Una sola bailarina/o', 1, 1, true, '{"price": 800, "min_routine": 1.5, "max_routine": 2.5}'),
@@ -16,6 +19,3 @@ ON CONFLICT (id) DO UPDATE
       sort_order = EXCLUDED.sort_order,
       is_active = EXCLUDED.is_active,
       metadata = EXCLUDED.metadata;
-
--- Si la tabla categories no existe todavía, esta migración no aplicará.
--- Espera a que exista (creada en 000600_category_fk.sql)

@@ -78,6 +78,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!contact) { showError('Escribe el nombre del capitán o representante.'); return false; }
       if (!email) { showError('Escribe el correo del contacto.'); return false; }
       if (!category) { showError('Selecciona la modalidad de competencia.'); return false; }
+      const ageCat = document.getElementById('team-age-category')?.value || '';
+      if (!ageCat) { showError('Selecciona una categoría por edad.'); return false; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Revisa el correo: parece no ser válido.'); return false; }
       return true;
     }
@@ -125,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const dancersList = document.getElementById('dancers-list');
   const addDancerBtn = document.getElementById('add-dancer');
 
-  function addDancerRow(name = '', technique = '', division = '') {
+  function addDancerRow(name = '', genre = '', modality = '') {
     const row = document.createElement('div');
     row.className = 'dancer-row bg-brand-dark/40 rounded-2xl border border-brand-white-faint p-4 space-y-3';
     row.innerHTML = `
@@ -134,8 +136,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         <input type="text" class="dancer-name w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Nombre completo" value="${escapeHtml(name)}">
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3">
-        <input type="text" class="dancer-technique bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Género" value="${escapeHtml(technique)}">
-        <input type="text" class="dancer-division bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Modalidad / Nivel" value="${escapeHtml(division)}">
+        <input type="text" class="dancer-genre bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Género" value="${escapeHtml(genre)}">
+        <input type="text" class="dancer-modality bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Modalidad / Nivel" value="${escapeHtml(modality)}">
         <button type="button" class="remove-dancer min-h-[44px] sm:min-h-0 self-start sm:self-auto text-brand-white-muted/40 hover:text-red-400 transition-colors rounded-lg px-3" title="Quitar" aria-label="Quitar bailarín">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
@@ -201,6 +203,7 @@ const teamName = form.querySelector('#team-name').value.trim();
       const contactPhone = form.querySelector('#contact-phone').value.trim();
       const contactEmail = form.querySelector('#contact-email').value.trim();
       const categoryId = document.getElementById('team-category')?.value || null;
+const ageCategory = document.getElementById('team-age-category')?.value || null;
 
     try {
       if (window.TypeSafe) {
@@ -237,8 +240,8 @@ const teamName = form.querySelector('#team-name').value.trim();
     const dancerRows = Array.from(dancersList.querySelectorAll('.dancer-row'));
     const dancers = dancerRows.map(r => ({
       full_name: r.querySelector('.dancer-name').value.trim(),
-      technique: r.querySelector('.dancer-technique').value.trim(),
-      division: r.querySelector('.dancer-division').value.trim(),
+      genre: r.querySelector('.dancer-genre').value.trim(),
+      modality_level: r.querySelector('.dancer-modality').value.trim(),
       category_id: categoryId
     })).filter(d => d.full_name);
 
@@ -260,7 +263,8 @@ const teamName = form.querySelector('#team-name').value.trim();
           contact_name: contactName,
           contact_phone: contactPhone,
           contact_email: contactEmail,
-          category_id: categoryId,
+           category_id: categoryId,
+           age_category: ageCategory,
           logo_path: logo.path,
           logo_url: logo.url,
           music_path: music.path,

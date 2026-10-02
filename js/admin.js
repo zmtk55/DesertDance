@@ -107,7 +107,7 @@
   // ============================================================
 async function fetchAll() {
     const [teams, categories, settings, admins, carousel, eventLogo, auditLog] = await Promise.all([
-      supabase.from('teams').select('*, participants(id, full_name, technique, division, routine_title, email, status)').order('created_at', { ascending: false }),
+      supabase.from('teams').select('*, participants(id, full_name, genre, modality_level, routine_title, email, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
       supabase.from('admin_users').select('*'),
@@ -828,15 +828,15 @@ async function fetchAll() {
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
           <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
             <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Nombre</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Técnica</th>
-            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">División</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Género</th>
+            <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Modalidad</th>
             <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold text-right">Acciones</th>
           </tr></thead><tbody>
             ${dancers.map(d => `
               <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
                 <td class="px-5 py-3 font-semibold text-brand-white">${esc(d.full_name)}</td>
-                <td class="px-5 py-3 text-brand-white-muted/70">${esc(d.technique || '—')}</td>
-                <td class="px-5 py-3 text-brand-white-muted/70">${esc(d.division || '—')}</td>
+                <td class="px-5 py-3 text-brand-white-muted/70">${esc(d.genre || '—')}</td>
+                <td class="px-5 py-3 text-brand-white-muted/70">${esc(d.modality_level || '—')}</td>
                 <td class="px-5 py-3">
                   <div class="flex justify-end gap-1.5">
                     <button data-action="edit-dancer" data-id="${d.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg border border-brand-white-faint text-brand-white-muted/50 hover:text-brand-lime hover:border-brand-lime/40 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
@@ -1270,8 +1270,8 @@ function openDancerModal(teamId, dancer = null) {
     $('df-id').value = dancer?.id || '';
     $('df-team-id').value = teamId;
     $('df-name').value = dancer?.full_name || '';
-    $('df-technique').value = dancer?.technique || '';
-    $('df-division').value = dancer?.division || '';
+    $('df-genre').value = dancer?.genre || '';
+    $('df-modality').value = dancer?.modality_level || '';
     $('df-routine').value = dancer?.routine_title || '';
 
     // Dropdown de categorías: opcional, con los valores del catálogo de la BD.
@@ -1521,8 +1521,8 @@ function openDancerModal(teamId, dancer = null) {
     const data = {
       team_id: teamId,
       full_name: $('df-name').value.trim(),
-      technique: $('df-technique').value.trim(),
-      division: $('df-division').value.trim(),
+      genre: $('df-genre').value.trim(),
+      modality_level: $('df-modality').value.trim(),
       routine_title: $('df-routine').value.trim(),
       category_id: $('df-category').value || null,
       email: team?.contact_email || '',
@@ -1732,8 +1732,8 @@ function openDancerModal(teamId, dancer = null) {
       headers = ['Equipo', 'Ciudad', 'Contacto', 'Teléfono', 'Email', 'Categoría', 'Estatus', 'Horario', 'Registro'];
       rows = state.teams.map(t => [t.name, t.origin_city || '', t.contact_name || '', t.contact_phone || '', t.contact_email || '', t.category || '', STATUS_LABELS[t.status]?.label || t.status, t.scheduled_time || '', t.created_at]);
     } else if (type === 'dancers') {
-      headers = ['Equipo', 'Nombre', 'Técnica', 'División', 'Rutina'];
-      rows = state.teams.flatMap(t => (state.dancersByTeam[t.id] || []).map(d => [t.name, d.full_name, d.technique || '', d.division || '', d.routine_title || '']));
+      headers = ['Equipo', 'Nombre', 'Género', 'Modalidad', 'Rutina'];
+      rows = state.teams.flatMap(t => (state.dancersByTeam[t.id] || []).map(d => [t.name, d.full_name, d.genre || '', d.modality_level || '', d.routine_title || '']));
     } else if (type === 'payments') {
       headers = ['Equipo', 'Concepto', 'Monto', 'Estado', 'Vencimiento', 'Pago', 'Método', 'Referencia'];
       rows = Object.entries(state.teamData).flatMap(([tid, td]) => (td.payments?.all || []).map(p => [state.teams.find(t => t.id === tid)?.name || '', p.concept, p.amount, PAYMENT_STATUS[p.status]?.label || p.status, p.due_date || '', p.paid_date || '', p.payment_method || '', p.reference || '']));
@@ -1923,7 +1923,7 @@ function openCarouselModal(img = null) {
     $('import-modal-title').textContent = type === 'teams' ? 'Importar equipos' : 'Importar bailarines';
     $('import-hint').textContent = type === 'teams'
       ? 'Columnas: nombre,ciudad,contacto,telefono,email,status,categoria,horario,notas'
-      : 'Columnas: team_id,nombre,tecnica,division,rutina,categoria,email,status';
+      : 'Columnas: team_id,nombre,genero,modalidad_nivel,rutina,categoria,email,status';
     $('import-file').value = '';
     $('import-preview').classList.add('hidden');
     openModal('import');
@@ -1978,8 +1978,8 @@ function openCarouselModal(img = null) {
             const { error } = await supabase.from('participants').insert([{
               team_id: row.team_id || '',
               full_name: row.nombre || row.name || '',
-              technique: row.tecnica || row.technique || '',
-              division: row.division || '',
+              genre: row.genero || row.genre || row.tecnica || '',
+              modality_level: row.modalidad_nivel || row.modality_level || row.division || '',
               routine_title: row.rutina || row.routine || '',
               category_id: row.categoria || row.category_id || null,
               email: row.email || '',

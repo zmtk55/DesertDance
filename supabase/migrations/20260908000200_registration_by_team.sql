@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.teams (
   contact_name TEXT DEFAULT '',            -- capitán / representante
   contact_phone TEXT DEFAULT '',
   contact_email TEXT DEFAULT '',
+  age_category TEXT DEFAULT '',             -- categoría por edad (Mini, Junior, Teens, Senior)
   logo_path TEXT DEFAULT '',               -- ruta en storage (SVG/PNG)
   logo_url TEXT DEFAULT '',                -- URL pública del logo
   music_path TEXT DEFAULT '',              -- ruta en storage (MP3)
@@ -33,8 +34,8 @@ ALTER TABLE public.teams
 -- ============================================================
 ALTER TABLE public.participants
   ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES public.teams(id) ON DELETE CASCADE,
-  ADD COLUMN IF NOT EXISTS technique TEXT DEFAULT '',     -- técnica (moderno, urbano, ballet, aéreo...)
-  ADD COLUMN IF NOT EXISTS division TEXT DEFAULT '',      -- división / rango de edad
+  ADD COLUMN IF NOT EXISTS genre TEXT DEFAULT '',           -- género (contemporáneo, urbano, ballet, aéreo...)
+  ADD COLUMN IF NOT EXISTS modality_level TEXT DEFAULT '',  -- modalidad / nivel
   ADD COLUMN IF NOT EXISTS routine_title TEXT DEFAULT '', -- título de la rutina
   ADD COLUMN IF NOT EXISTS school_name TEXT DEFAULT '';   -- nombre de la escuela (respaldo desnormalizado)
 
