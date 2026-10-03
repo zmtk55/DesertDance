@@ -2,20 +2,23 @@ document.addEventListener('DOMContentLoaded', async function () {
   const form = document.getElementById('registration-form');
   if (!form) return;
 
+  const state = { categories: [] };
+
   // Cargar modalidades de competencia desde la BD y poblar el dropdown.
   const categorySelect = document.getElementById('team-category');
   if (categorySelect) {
     try {
       const { data: cats, error } = await supabase
         .from('categories')
-        .select('id, name, is_active')
+        .select('id, name, price, is_active')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (!error && cats) {
+        state.categories = cats || [];
         cats.forEach(c => {
           const opt = document.createElement('option');
           opt.value = c.id;
-          opt.textContent = c.name;
+          opt.textContent = c.name + ' ($' + (c.price || 0) + ' MXN)';
           categorySelect.appendChild(opt);
         });
       }
@@ -251,6 +254,12 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
       category_id: categoryId
     })).filter(d => d.full_name);
 
+    // Calcular precio total: precio por persona × número de bailarines registrados
+    const selectedCat = state.categories?.find(c => c.id === categoryId);
+    const pricePerPerson = selectedCat?.price || 0;
+    const dancerCount = dancers.length;
+    const totalPrice = pricePerPerson * dancerCount;
+
     try {
       const music = await uploadFile(musicFile, 'music', 'music');
 
@@ -269,8 +278,9 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
           contact_name: contactName,
           contact_phone: contactPhone,
           contact_email: contactEmail,
-           category_id: categoryId,
-           age_category: ageCategory,
+          category_id: categoryId,
+          age_category: ageCategory,
+          total_price: totalPrice,
           logo_path: logo.path,
           logo_url: logo.url,
           music_path: music.path,

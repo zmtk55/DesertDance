@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
   name TEXT NOT NULL UNIQUE,
   description TEXT DEFAULT '',
   max_participants INTEGER DEFAULT 8,
+  price NUMERIC(10,2) DEFAULT 0,     -- precio por participante
   is_active BOOLEAN DEFAULT true,
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now()

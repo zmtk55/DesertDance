@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
     contact_email: email,
     category_id: team?.category_id || null,
     age_category: team?.age_category || '',
+    total_price: team?.total_price || 0,
     logo_path: logo_path || '',
     logo_url: logo_url || '',
     music_path: music_path || '',

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.teams (
   contact_phone TEXT DEFAULT '',
   contact_email TEXT DEFAULT '',
   age_category TEXT DEFAULT '',             -- categoría por edad (Mini, Junior, Teens, Senior)
+  total_price NUMERIC(10,2) DEFAULT 0,      -- precio total calculado al momento del registro
   logo_path TEXT DEFAULT '',               -- ruta en storage (SVG/PNG)
   logo_url TEXT DEFAULT '',                -- URL pública del logo
   music_path TEXT DEFAULT '',              -- ruta en storage (MP3)
