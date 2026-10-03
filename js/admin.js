@@ -394,7 +394,7 @@ async function fetchAll() {
     window.scrollTo(0, 0);
     main.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-2 border-brand-lime/30 border-t-brand-lime rounded-full animate-spin"></div></div>';
     
-    try {
+     try {
       switch (route.view) {
         case 'dashboard': renderDashboard(main); break;
         case 'teams': renderTeams(main); break;
@@ -411,6 +411,9 @@ async function fetchAll() {
       console.error(err);
       main.innerHTML = `<div class="text-center py-20"><p class="text-red-400">Error: ${esc(err.message)}</p></div>`;
     }
+    
+    // Forzar scroll a top después de renderizar (fix auto-scroll a mitad de página)
+    window.scrollTo(0, 0);
   }
 
   // ============================================================
