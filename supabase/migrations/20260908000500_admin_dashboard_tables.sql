@@ -25,15 +25,16 @@ DROP POLICY IF EXISTS "Allow authenticated manage categories" ON public.categori
 CREATE POLICY "Allow authenticated manage categories" ON public.categories
   FOR ALL USING (auth.role() = 'authenticated');
 
--- Categorías iniciales
-INSERT INTO public.categories (name, description, sort_order) VALUES
-  ('Competencia Danza Contemporánea', 'Danza contemporánea y expresión corporal', 1),
-  ('Competencia Danza Urbana', 'Hip-hop, breakdance, street dance', 2),
-  ('Competencia Ballet', 'Ballet clásico y neoclásico', 3),
-  ('Competencia Danza Folklórica', 'Danzas tradicionales mexicanas', 4),
-  ('Competencia Danza Aérea', 'Aéreo, telas, trapecio', 5),
-  ('Workshop General', 'Talleres y masterclasses', 6)
-ON CONFLICT (name) DO NOTHING;
+-- Categorías iniciales (placeholders con los mismos IDs que el seed 20261001000000)
+-- Usan ON CONFLICT (id) DO NOTHING para que el seed posterior haga UPDATE
+INSERT INTO public.categories (id, name, description, max_participants, price, sort_order, is_active, metadata) VALUES
+  ('a1b2c3d4-e101-4001-8001-000000000001', 'Solista', 'Una sola bailarina/o', 1, 800, 1, true, '{}'),
+  ('a1b2c3d4-e102-4001-8001-000000000002', 'Dúo', 'Dos bailarines', 2, 500, 2, true, '{}'),
+  ('a1b2c3d4-e103-4001-8001-000000000003', 'Tríos', 'Tres bailarines', 3, 500, 3, true, '{}'),
+  ('a1b2c3d4-e104-4001-8001-000000000004', 'Grupo Pequeño', '4 a 9 bailarines', 9, 300, 4, true, '{}'),
+  ('a1b2c3d4-e105-4001-8001-000000000005', 'Grupo Grande', '10 o más bailarines', 99, 300, 5, true, '{}'),
+  ('a1b2c3d4-e106-4001-8001-000000000006', 'Colegial', 'Equipo escolar/estudiantes', 99, 200, 6, true, '{}')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
 -- 2. payments — Pagos y finanzas
