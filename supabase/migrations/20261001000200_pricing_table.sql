@@ -18,21 +18,15 @@ DO $$
 DECLARE
   cat_rec RECORD;
   age_cats TEXT[] := ARRAY['Mini', 'Junior', 'Teens', 'Senior'];
+  price_map JSONB := '{"Solista": 800, "Dúo": 500, "Tríos": 500, "Grupo Pequeño": 300, "Grupo Grande": 300, "Colegial": 200}'::JSONB;
   base_price NUMERIC;
+  age_cat TEXT;
 BEGIN
   FOR cat_rec IN 
     SELECT id, name FROM categories 
     WHERE name IN ('Solista', 'Dúo', 'Tríos', 'Grupo Pequeño', 'Grupo Grande', 'Colegial')
   LOOP
-    CASE cat_rec.name
-      WHEN 'Solista' THEN base_price := 800;
-      WHEN 'Dúo' THEN base_price := 500;
-      WHEN 'Tríos' THEN base_price := 500;
-      WHEN 'Grupo Pequeño' THEN base_price := 300;
-      WHEN 'Grupo Grande' THEN base_price := 300;
-      WHEN 'Colegial' THEN base_price := 200;
-      ELSE base_price := 500;
-    END CASE;
+    base_price := (price_map -> cat_rec.name)::NUMERIC;
     
     FOR age_cat IN SELECT UNNEST(age_cats)
     LOOP

@@ -1,16 +1,30 @@
 -- Desert Dance: Fix categories - ensure only the 6 correct modalidades exist with proper UUIDs and prices
 -- This migration handles cases where stale categories with different IDs exist
+-- Also ensures the price and metadata columns exist (added in a later migration)
 
--- Delete any stale categories that are NOT the correct 6 modalidades
+-- 1. Add missing columns if they don't exist
+ALTER TABLE public.categories 
+  ADD COLUMN IF NOT EXISTS price NUMERIC(10,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS max_participants INTEGER DEFAULT 8,
+  ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+
+-- 2. Delete stale categories with canonical names but wrong UUIDs
 DELETE FROM public.categories
-WHERE id NOT IN (
-  'a1b2c3d4-e101-4001-8001-000000000001',
-  'a1b2c3d4-e102-4001-8001-000000000002',
-  'a1b2c3d4-e103-4001-8001-000000000003',
-  'a1b2c3d4-e104-4001-8001-000000000004',
-  'a1b2c3d4-e105-4001-8001-000000000005',
-  'a1b2c3d4-e106-4001-8001-000000000006'
-);
+WHERE name IN ('Solista', 'Dúo', 'Tríos', 'Grupo Pequeño', 'Grupo Grande', 'Colegial')
+  AND id NOT IN (
+    'a1b2c3d4-e101-4001-8001-000000000001',
+    'a1b2c3d4-e102-4001-8001-000000000002',
+    'a1b2c3d4-e103-4001-8001-000000000003',
+    'a1b2c3d4-e104-4001-8001-000000000004',
+    'a1b2c3d4-e105-4001-8001-000000000005',
+    'a1b2c3d4-e106-4001-8001-000000000006'
+  );
+
+-- 3. Delete any other stale categories (placeholder names from 20260908000500)
+DELETE FROM public.categories
+WHERE name LIKE 'Competencia %' OR name = 'Workshop General';
 
 -- Re-insert the 6 correct modalidades (in case they were deleted by the previous step)
 INSERT INTO public.categories (id, name, description, max_participants, price, sort_order, is_active, metadata) VALUES
