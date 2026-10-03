@@ -215,16 +215,12 @@ CREATE POLICY "Allow authenticated insert settings" ON public.event_settings
 -- Configuraciones iniciales
 INSERT INTO public.event_settings (key, value) VALUES
   ('event_name', 'Desert Dance 2026'),
-  ('event_dates_phase1', '17-19 abril 2026'),
-  ('event_dates_phase2', '1-3 mayo 2026'),
+  ('event_dates_phase1', '27 y 28 de noviembre 2026'),
+  ('event_dates_phase2', '+ fechas workshops'),
   ('event_location', 'Caborca, Sonora'),
   ('registration_open', 'true'),
-  ('early_bird_deadline', '2026-03-15'),
-  ('early_bird_price_team', '4500'),
-  ('regular_price_team', '5500'),
-  ('price_extra_dancer', '800'),
-  ('max_dancers_per_team', '12'),
-  ('contact_whatsapp', '526622224220'),
+  ('contact_whatsapp', '526371302977'),
+  ('contact_whatsapp2', '526371221869'),
   ('contact_email', 'info@desertdance.mx')
 ON CONFLICT (key) DO NOTHING;
 

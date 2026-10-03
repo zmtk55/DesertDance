@@ -1096,12 +1096,7 @@ async function fetchAll() {
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <p class="text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.2em] mb-4">Precios</p>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Early bird (equipo)</label><input name="early_bird_price_team" type="number" value="${s.early_bird_price_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Regular (equipo)</label><input name="regular_price_team" type="number" value="${s.regular_price_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Bailarín adicional</label><input name="price_extra_dancer" type="number" value="${s.price_extra_dancer || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-            <div><label class="block text-[10px] font-extrabold text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Límite bailarines/equipo</label><input name="max_dancers_per_team" type="number" value="${s.max_dancers_per_team || ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40"></div>
-          </div>
+          <p class="text-[11px] text-brand-white-muted/60 mb-3">Los precios por modalidad se configuran en la sección de Modalidades.</p>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
           <p class="text-[10px] text-brand-lime font-extrabold uppercase tracking-[0.2em] mb-4">Registro</p>
@@ -1308,6 +1303,7 @@ function openDancerModal(teamId, dancer = null) {
     $('cf-description').value = cat?.description || '';
     $('cf-max').value = cat?.max_participants || 8;
     $('cf-sort').value = cat?.sort_order || 0;
+    $('cf-price').value = cat?.price || 0;
     $('cf-active').value = cat?.is_active !== false ? 'true' : 'false';
     openModal('category');
   }
@@ -1629,6 +1625,7 @@ function openDancerModal(teamId, dancer = null) {
       description: $('cf-description').value.trim(),
       max_participants: parseInt($('cf-max').value) || 8,
       sort_order: parseInt($('cf-sort').value) || 0,
+      price: parseInt($('cf-price').value) || 0,
       is_active: $('cf-active').value === 'true'
     };
     try {
