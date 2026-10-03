@@ -19,8 +19,7 @@ Deno.serve(async (req) => {
 
   try {
     let body;
-  let body;
-  try {
+    try {
     body = await req.json();
     console.log('Parsed body:', body);
   } catch (e) {
