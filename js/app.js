@@ -173,7 +173,13 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   async function uploadFile(file, prefix, folder) {
-    const path = `${folder}/${uid()}_${file.name}`;
+    const safeName = (file.name || 'file')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    const path = `${folder}/${uid()}_${safeName}`;
     const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
       cacheControl: '3600',
       upsert: false
