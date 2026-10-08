@@ -612,7 +612,7 @@ async function fetchAll() {
     return `
       <a href="#team/${team.id}" class="block bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 hover:border-brand-lime/30 hover:-translate-y-0.5 transition-all duration-300">
         <div class="flex items-center gap-3 mb-3">
-          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-11 h-11 rounded-xl object-contain bg-brand-dark/60 border border-brand-white-faint p-1">` : `<div class="w-11 h-11 rounded-xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 font-title font-bold">${esc(team.name.charAt(0))}</div>`}
+          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-16 h-16 rounded-xl object-contain bg-brand-dark/60 border border-brand-white-faint p-1">` : `<div class="w-11 h-11 rounded-xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 font-title font-bold">${esc(team.name.charAt(0))}</div>`}
           <div class="flex-1 min-w-0">
             <p class="font-semibold text-brand-white truncate text-sm">${esc(team.name)}</p>
             <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')}</p>
@@ -630,7 +630,7 @@ async function fetchAll() {
     const dancers = state.dancersByTeam[team.id]?.length || 0;
     return `
       <a href="#team/${team.id}" class="flex items-center gap-3 bg-brand-dark-elevated/30 rounded-xl border border-brand-white-faint px-4 py-3 hover:border-brand-lime/30 transition-colors">
-        ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-9 h-9 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-0.5">` : `<div class="w-9 h-9 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
+        ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-12 h-12 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-0.5">` : `<div class="w-9 h-9 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-brand-white truncate">${esc(team.name)}</p>
           <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')} · ${esc(team.contact_name || '—')} · ${dancers} bailarines</p>
@@ -726,7 +726,7 @@ async function fetchAll() {
       
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-4">
-          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-14 h-14 rounded-2xl object-contain bg-brand-dark-elevated border border-brand-white-faint p-1.5">` : `<div class="w-14 h-14 rounded-2xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 font-title font-bold text-xl">${esc(team.name.charAt(0))}</div>`}
+          ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-20 h-20 rounded-2xl object-contain bg-brand-dark-elevated border border-brand-white-faint p-1.5">` : `<div class="w-20 h-20 rounded-2xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 font-title font-bold text-2xl">${esc(team.name.charAt(0))}</div>`}
           <div>
             <h1 class="font-title text-xl md:text-2xl font-black text-brand-white">${esc(team.name)}</h1>
             <p class="text-sm text-brand-white-muted/50">${esc(team.origin_city || '—')} · ${esc(team.contact_name || '—')}</p>
@@ -913,17 +913,17 @@ async function fetchAll() {
           ${docs.map(d => `
             <div class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-4 flex items-center gap-3">
               <div class="w-10 h-10 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 flex-shrink-0">
-                ${d.type === 'logo' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/></svg>' : d.type === 'music' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>'}
+                ${d.type === 'logo' ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/></svg>' : d.type === 'music' ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/></svg>' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>'}
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-brand-white truncate">${esc(d.name)}</p>
                 <p class="text-[10px] text-brand-white-muted/60">${formatBytes(d.file_size || 0)}</p>
               </div>
               <div class="flex gap-1">
-                  <a href="${esc(d.file_url)}" target="_blank" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Descargar" aria-label="Descargar archivo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg></a>
-                  <button data-action="share-doc" data-id="${d.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Compartir enlace"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
-                  <button data-action="preview-doc" data-id="${d.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Vista previa"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                  <button data-action="delete-doc" data-id="${d.id}" class="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-brand-white-muted/50 hover:text-red-400 transition-colors" title="Eliminar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                  <a href="${esc(d.file_url)}" target="_blank" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Descargar" aria-label="Descargar archivo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg></a>
+                  <button data-action="share-doc" data-id="${d.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Compartir enlace"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+                  <button data-action="preview-doc" data-id="${d.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Vista previa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  <button data-action="delete-doc" data-id="${d.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-red-400 transition-colors" title="Eliminar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
               </div>
             </div>`).join('')}
         </div>`}`;
@@ -2059,19 +2059,23 @@ function openCarouselModal(img = null) {
     const title = $('preview-modal-title');
     title.textContent = doc.name || 'Vista previa';
 
-    if (doc.mime_type?.startsWith('image/')) {
-      content.innerHTML = `<img src="${esc(doc.file_url)}" class="max-w-full max-h-[60vh] object-contain">`;
-    } else if (doc.mime_type?.startsWith('audio/')) {
+    // Los docs virtuales (logo/música del equipo) no traen mime_type; usamos doc.type + extensión.
+    const isImage = (doc.mime_type && doc.mime_type.startsWith('image/')) || doc.type === 'logo' || /\.(png|jpe?g|gif|svg|webp)(\?|$)/i.test(doc.file_url || '');
+    const isAudio = (doc.mime_type && doc.mime_type.startsWith('audio/')) || doc.type === 'music' || /\.(mp3|wav|ogg|m4a|aac|flac)(\?|$)/i.test(doc.file_url || '');
+
+    if (isImage) {
+      content.innerHTML = `<img src="${esc(doc.file_url)}" class="max-w-full max-h-[70vh] object-contain">`;
+    } else if (isAudio) {
       content.innerHTML = `
         <div class="w-full space-y-3">
-          <audio controls class="w-full">
-            <source src="${esc(doc.file_url)}" type="${esc(doc.mime_type)}">
+          <audio controls class="w-full" autoplay>
+            <source src="${esc(doc.file_url)}" type="${esc(doc.mime_type || 'audio/mpeg')}">
             Tu navegador no reproduce este archivo de audio.
           </audio>
           <p class="text-xs text-brand-white-muted/60 text-center">${esc(doc.name)} · ${formatBytes(doc.file_size || 0)}</p>
         </div>`;
     } else if (doc.mime_type === 'application/pdf') {
-      content.innerHTML = `<iframe src="${esc(doc.file_url)}" class="w-full h-[60vh] rounded-lg border border-brand-white-faint"></iframe>`;
+      content.innerHTML = `<iframe src="${esc(doc.file_url)}" class="w-full h-[70vh] rounded-lg border border-brand-white-faint"></iframe>`;
     } else {
       content.innerHTML = `<p class="text-brand-white-muted/60 text-sm">Vista previa no disponible para este tipo de archivo</p><p class="text-brand-white-muted/50 text-xs mt-2">${esc(doc.mime_type || 'desconocido')} · ${formatBytes(doc.file_size || 0)}</p>`;
     }
