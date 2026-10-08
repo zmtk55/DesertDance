@@ -532,12 +532,12 @@ async function fetchAll() {
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
              Agregar
            </button>
-           <button data-action="import-teams" class="inline-flex items-center gap-2 bg-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-white-faint/80 transition-colors">
+           <button data-action="import-teams" class="inline-flex items-center gap-2 bg-brand-dark-elevated border border-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:border-brand-lime/40 hover:text-brand-lime transition-colors">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
              Importar CSV
            </button>
-           <button data-action="view-calendar" class="inline-flex items-center gap-2 bg-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-white-faint/80 transition-colors">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+<button data-action="view-calendar" class="inline-flex items-center gap-2 bg-brand-dark-elevated border border-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:border-brand-lime/40 hover:text-brand-lime transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
              Calendario
            </button>
         </div>
@@ -932,7 +932,6 @@ async function fetchAll() {
   // -- Tab: Calendar --
   function renderCalendarTab(team, container) {
     const sched = team.scheduled_time ? new Date(team.scheduled_time) : null;
-    const schedValue = team.scheduled_time ? team.scheduled_time.slice(0, 16) : '';
     container.innerHTML = `
       <div class="grid md:grid-cols-2 gap-6">
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
@@ -946,9 +945,16 @@ async function fetchAll() {
           <div id="schedule-display">
             ${sched ? `<div class="flex items-center gap-4"><div class="w-14 h-14 rounded-xl bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center"><span class="font-title text-2xl font-black text-brand-lime">${sched.getDate()}</span></div><div><p class="font-title text-lg font-bold text-brand-white">${sched.toLocaleDateString('es-MX', { weekday: 'long', month: 'long', year: 'numeric' })}</p><p class="text-brand-white-muted/50 text-sm">${sched.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} hrs</p></div></div>` : '<p class="text-brand-white-muted/50 text-sm text-center py-6">Sin horario asignado</p>'}
           </div>
-          <div id="schedule-edit" class="hidden mt-4">
-            <input id="inline-schedule" type="datetime-local" value="${schedValue}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
-            <div class="flex gap-2 mt-3">
+          <div id="schedule-edit" class="hidden mt-4 space-y-3">
+            <div>
+              <label class="block text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Fecha</label>
+              <input id="inline-date" type="date" value="${sched ? sched.toISOString().slice(0, 10) : ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            </div>
+            <div>
+              <label class="block text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Hora</label>
+              <input id="inline-time" type="time" value="${sched ? sched.toTimeString().slice(0, 5) : ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+            </div>
+            <div class="flex gap-2 mt-1">
               <button id="save-schedule" data-team="${team.id}" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-2.5 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
               <button id="cancel-schedule" class="flex-1 border border-brand-white-faint text-brand-white-muted/70 font-bold text-xs py-2.5 rounded-xl hover:text-brand-white transition-colors">Cancelar</button>
             </div>
@@ -1688,8 +1694,9 @@ function openDancerModal(teamId, dancer = null) {
   document.addEventListener('click', async (e) => {
     if (e.target.id === 'save-schedule') {
       const teamId = e.target.dataset.team;
-      const val = document.getElementById('inline-schedule').value;
-      const scheduled_time = val ? new Date(val).toISOString() : null;
+      const dateVal = document.getElementById('inline-date').value;
+      const timeVal = document.getElementById('inline-time').value || '00:00';
+      const scheduled_time = dateVal ? new Date(`${dateVal}T${timeVal}:00`).toISOString() : null;
       try {
         await updateTeam(teamId, { scheduled_time });
         const t = state.teams.find(x => x.id === teamId);
@@ -2014,15 +2021,27 @@ function openCarouselModal(img = null) {
     renderCalendar();
   }
 
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#calendar-prev')) { calendarMonthOffset--; renderCalendar(); }
+    if (e.target.closest('#calendar-next')) { calendarMonthOffset++; renderCalendar(); }
+  });
+
+  let calendarMonthOffset = 0;
+
   function renderCalendar() {
     const grid = $('calendar-grid');
     const list = $('calendar-list');
+    const label = $('calendar-month-label');
     if (!grid || !list) return;
 
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    const base = new Date(now.getFullYear(), now.getMonth() + calendarMonthOffset, 1);
+    const year = base.getFullYear();
+    const month = base.getMonth();
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    if (label) label.textContent = `${monthNames[month]} ${year}`;
+
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -2034,7 +2053,8 @@ function openCarouselModal(img = null) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const dayTeams = state.teams.filter(t => t.scheduled_time && t.scheduled_time.startsWith(dateStr));
       const hasSchedule = dayTeams.length > 0;
-      grid.innerHTML += `<div class="p-2 min-w-[44px] min-h-[44px] rounded-lg cursor-pointer hover:bg-brand-lime/20 transition-colors ${hasSchedule ? 'bg-brand-lime/10 text-brand-lime font-bold' : 'text-brand-white-muted/50'}">${d}${hasSchedule ? `<span class="block text-[8px]">${dayTeams.length}</span>` : ''}</div>`;
+      const isToday = calendarMonthOffset === 0 && d === now.getDate();
+      grid.innerHTML += `<div class="p-2 min-w-[44px] min-h-[44px] rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center ${hasSchedule ? 'bg-brand-lime/15 text-brand-lime font-bold' : 'text-brand-white-muted/50 hover:bg-brand-white-faint'} ${isToday ? 'ring-1 ring-brand-lime/50' : ''}">${d}${hasSchedule ? `<span class="block text-[9px] font-bold">${dayTeams.length}</span>` : ''}</div>`;
     }
 
     const today = new Date().toISOString().split('T')[0];
