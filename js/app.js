@@ -83,6 +83,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!category) { showError('Selecciona la modalidad de competencia.'); return false; }
       const ageCat = document.getElementById('team-age-category')?.value || '';
       if (!ageCat) { showError('Selecciona una categoría por edad.'); return false; }
+      const nivel = document.getElementById('team-modalidad')?.value || '';
+      if (!nivel) { showError('Selecciona el nivel de competencia (principiante / medio / avanzado).'); return false; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Revisa el correo: parece no ser válido.'); return false; }
       return true;
     }
@@ -145,7 +147,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         </div>
         <div>
           <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Modalidad / Nivel</label>
-          <input type="text" class="dancer-modality w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Principiante, avanzado..." value="${escapeHtml(modality)}">
+          <select class="dancer-modality w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors appearance-none bg-no-repeat bg-right pr-10" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d8e723%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')">
+            <option value="">— Selecciona nivel —</option>
+            <option value="principiante" ${modality === 'principiante' ? 'selected' : ''}>Principiante</option>
+            <option value="medio" ${modality === 'medio' ? 'selected' : ''}>Medio</option>
+            <option value="avanzado" ${modality === 'avanzado' ? 'selected' : ''}>Avanzado</option>
+          </select>
         </div>
         <button type="button" class="remove-dancer min-h-[44px] sm:min-h-0 self-start sm:self-auto text-brand-white-muted/40 hover:text-red-400 transition-colors rounded-lg px-3" title="Quitar" aria-label="Quitar bailarín">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -195,6 +202,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     clearError();
   });
 
+  function updateProgress(text, pct) {
+    if (progressText) progressText.textContent = text;
+    if (progressPct) progressPct.textContent = pct + '%';
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (progressEl) progressEl.classList.remove('hidden');
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!validateStep(1)) { renderStep(1); return; }
@@ -203,8 +217,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const btn = stepSubmit;
     const originalHTML = btn.innerHTML;
+    const progressEl = document.getElementById('upload-progress');
+    const progressText = document.getElementById('progress-text');
+    const progressPct = document.getElementById('progress-pct');
+    const progressBar = document.getElementById('progress-bar');
     btn.innerHTML = 'Validando con IA…';
     btn.disabled = true;
+    progressEl?.classList.remove('hidden');
+    updateProgress('Validando con IA…', 15);
 
 const teamName = form.querySelector('#team-name').value.trim();
       const originCity = form.querySelector('#origin-city').value.trim();
@@ -212,7 +232,9 @@ const teamName = form.querySelector('#team-name').value.trim();
       const contactPhone = form.querySelector('#contact-phone').value.trim();
       const contactEmail = form.querySelector('#contact-email').value.trim();
       const categoryId = document.getElementById('team-category')?.value || null;
-const ageCategory = document.getElementById('team-age-category')?.value || null;
+      const ageCategory = document.getElementById('team-age-category')?.value || null;
+      const modalidad = document.getElementById('team-modalidad')?.value || 'medio';
+
 
     try {
       if (window.TypeSafe) {
@@ -241,7 +263,8 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
       console.warn('TypeSafe validation skipped:', err);
     }
 
-    btn.innerHTML = 'Subiendo, un momento…';
+    btn.innerHTML = 'Subiendo archivos…';
+    updateProgress('Subiendo música…', 40);
 
     const logoFile = form.querySelector('#team-logo').files[0];
     const musicFile = form.querySelector('#team-music').files[0];
@@ -256,6 +279,7 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
 
     try {
       const music = await uploadFile(musicFile, 'music', 'music');
+      updateProgress('Música subida · Subiendo logo…', 65);
 
       let logo = { path: null, url: null };
       if (logoFile) {
@@ -282,6 +306,7 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
         }]);
 
       if (teamErr) throw teamErr;
+      updateProgress('Guardando registro…', 90);
 
       if (dancers.length) {
         const { error: dancersErr } = await supabase
@@ -290,6 +315,7 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
         if (dancersErr) throw dancersErr;
       }
 
+      updateProgress('¡Enviado!', 100);
       form.innerHTML = `
         <div class="text-center space-y-4 py-6">
           <div class="w-16 h-16 rounded-full bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center mx-auto">
@@ -299,10 +325,11 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
           <p class="text-brand-white-muted/60">Nos pondremos en contacto vía WhatsApp. ¡Gracias <span class="text-brand-lime">${escapeHtml(teamName)}</span>!</p>
         </div>`;
     } catch (err) {
-      console.error(err);
+      console.error('Registro falló:', err);
       btn.innerHTML = originalHTML;
       btn.disabled = false;
-      showError('Ocurrió un error al enviar tu registro. Revisa que la música sea válida e inténtalo de nuevo, o contáctanos por WhatsApp.');
+      const msg = err?.message || String(err);
+      showError('Ocurrió un error al enviar tu registro: ' + msg.split('. ')[0] + '. Revisa tu conexión, la música debe ser un archivo de audio válido y contáctanos por WhatsApp si el problema persiste.');
     }
   });
 
