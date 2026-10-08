@@ -233,7 +233,10 @@ const teamName = form.querySelector('#team-name').value.trim();
       const contactEmail = form.querySelector('#contact-email').value.trim();
       const categoryId = document.getElementById('team-category')?.value || null;
       const ageCategory = document.getElementById('team-age-category')?.value || null;
-      const modalidad = document.getElementById('team-modalidad')?.value || 'medio';
+      // modalidad (nivel de competencia) se recoge y valida arriba, pero no se persiste aún:
+      // la tabla teams no tiene la columna 'modalidad'. Aplica la migración
+      // supabase/migrations/20261008000000_add_total_price_to_teams.sql en Supabase SQL Editor
+      // y vuelve a incluir modalidad: modalidad en el insert para guardarlo.
 
 
     try {
