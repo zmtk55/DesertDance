@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const dancersList = document.getElementById('dancers-list');
   const addDancerBtn = document.getElementById('add-dancer');
 
-  function addDancerRow(name = '', genre = '', modality = '') {
+  function addDancerRow(name = '') {
     const row = document.createElement('div');
     row.className = 'dancer-row bg-brand-dark/40 rounded-2xl border border-brand-white-faint p-4 space-y-3';
     row.innerHTML = `
@@ -140,19 +140,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Nombre completo</label>
         <input type="text" class="dancer-name w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Nombre completo" value="${escapeHtml(name)}">
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3">
-        <div>
-          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Género</label>
-          <input type="text" class="dancer-genre w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Contemporáneo, urbano..." value="${escapeHtml(genre)}">
-        </div>
-        <div>
-          <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Modalidad / Nivel</label>
-          <input type="text" class="dancer-modality w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Ej. principiante, avanzado" value="${escapeHtml(modality)}">
-        </div>
-        <button type="button" class="remove-dancer min-h-[44px] sm:min-h-0 self-start sm:self-auto text-brand-white-muted/40 hover:text-red-400 transition-colors rounded-lg px-3" title="Quitar" aria-label="Quitar bailarín">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
+      <button type="button" class="remove-dancer min-h-[44px] sm:min-h-0 self-start sm:self-auto text-brand-white-muted/40 hover:text-red-400 transition-colors rounded-lg px-3" title="Quitar" aria-label="Quitar bailarín">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
     `;
     dancersList.appendChild(row);
     row.querySelector('.remove-dancer').addEventListener('click', () => {
@@ -235,10 +225,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const dancerRows = Array.from(dancersList.querySelectorAll('.dancer-row'));
     const dancers = dancerRows.map(r => ({
       full_name: r.querySelector('.dancer-name').value.trim(),
-      genre: r.querySelector('.dancer-genre').value.trim(),
-      modality_level: r.querySelector('.dancer-modality').value.trim(),
       category_id: categoryId
-     })).filter(d => d.full_name);
+    })).filter(d => d.full_name);
 
     try {
       const music = await uploadFile(musicFile, 'music', 'music');
