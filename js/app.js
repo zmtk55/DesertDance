@@ -188,10 +188,14 @@ document.addEventListener('DOMContentLoaded', async function () {
   });
 
   function updateProgress(text, pct) {
-    if (progressText) progressText.textContent = text;
-    if (progressPct) progressPct.textContent = pct + '%';
-    if (progressBar) progressBar.style.width = pct + '%';
-    if (progressEl) progressEl.classList.remove('hidden');
+    const el = document.getElementById('upload-progress');
+    const txt = document.getElementById('progress-text');
+    const pctEl = document.getElementById('progress-pct');
+    const bar = document.getElementById('progress-bar');
+    if (txt) txt.textContent = text;
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (bar) bar.style.width = pct + '%';
+    if (el) el.classList.remove('hidden');
   }
 
   form.addEventListener('submit', async (e) => {
