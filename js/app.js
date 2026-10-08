@@ -147,12 +147,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         </div>
         <div>
           <label class="block text-[10px] font-extrabold text-brand-white-muted/40 uppercase tracking-[0.15em] mb-1.5">Modalidad / Nivel</label>
-          <select class="dancer-modality w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors appearance-none bg-no-repeat bg-right pr-10" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d8e723%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')">
-            <option value="">— Selecciona nivel —</option>
-            <option value="principiante" ${modality === 'principiante' ? 'selected' : ''}>Principiante</option>
-            <option value="medio" ${modality === 'medio' ? 'selected' : ''}>Medio</option>
-            <option value="avanzado" ${modality === 'avanzado' ? 'selected' : ''}>Avanzado</option>
-          </select>
+          <input type="text" class="dancer-modality w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3.5 text-base sm:text-sm text-brand-white placeholder:text-brand-white-muted/30 focus:outline-none focus:border-brand-lime/40 transition-colors" placeholder="Ej. principiante, avanzado" value="${escapeHtml(modality)}">
         </div>
         <button type="button" class="remove-dancer min-h-[44px] sm:min-h-0 self-start sm:self-auto text-brand-white-muted/40 hover:text-red-400 transition-colors rounded-lg px-3" title="Quitar" aria-label="Quitar bailarín">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -221,56 +216,21 @@ document.addEventListener('DOMContentLoaded', async function () {
     const progressText = document.getElementById('progress-text');
     const progressPct = document.getElementById('progress-pct');
     const progressBar = document.getElementById('progress-bar');
-    btn.innerHTML = 'Validando con IA…';
     btn.disabled = true;
     progressEl?.classList.remove('hidden');
-    updateProgress('Validando con IA…', 15);
+    updateProgress('Subiendo archivos…', 20);
 
-const teamName = form.querySelector('#team-name').value.trim();
-      const originCity = form.querySelector('#origin-city').value.trim();
-      const contactName = form.querySelector('#contact-name').value.trim();
-      const contactPhone = form.querySelector('#contact-phone').value.trim();
-      const contactEmail = form.querySelector('#contact-email').value.trim();
-      const categoryId = document.getElementById('team-category')?.value || null;
-      const ageCategory = document.getElementById('team-age-category')?.value || null;
-      // modalidad (nivel de competencia) se recoge y valida arriba, pero no se persiste aún:
-      // la tabla teams no tiene la columna 'modalidad'. Aplica la migración
-      // supabase/migrations/20261008000000_add_total_price_to_teams.sql en Supabase SQL Editor
-      // y vuelve a incluir modalidad: modalidad en el insert para guardarlo.
-
-
-    try {
-      if (window.TypeSafe) {
-        const answers = await window.TypeSafe.validateRegistration({
-          team_name: teamName,
-          origin_city: originCity,
-          contact_name: contactName,
-          contact_email: contactEmail,
-        });
-
-        if (answers.name_appropriate && answers.name_appropriate.noul < 0.7) {
-          showError('El nombre del equipo no es apropiado. Por favor, elige otro.');
-          btn.innerHTML = originalHTML;
-          btn.disabled = false;
-          return;
-        }
-
-        if (answers.is_complete && answers.is_complete.noul < 0.8) {
-          showError('Parece que faltan datos. Revisa que todos los campos obligatorios estén llenos.');
-          btn.innerHTML = originalHTML;
-          btn.disabled = false;
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('TypeSafe validation skipped:', err);
-    }
-
-    btn.innerHTML = 'Subiendo archivos…';
-    updateProgress('Subiendo música…', 40);
+    const teamName = form.querySelector('#team-name').value.trim();
+    const originCity = form.querySelector('#origin-city').value.trim();
+    const contactName = form.querySelector('#contact-name').value.trim();
+    const contactPhone = form.querySelector('#contact-phone').value.trim();
+    const contactEmail = form.querySelector('#contact-email').value.trim();
+    const categoryId = document.getElementById('team-category')?.value || null;
+    const ageCategory = document.getElementById('team-age-category')?.value || null;
 
     const logoFile = form.querySelector('#team-logo').files[0];
     const musicFile = form.querySelector('#team-music').files[0];
+
 
     const dancerRows = Array.from(dancersList.querySelectorAll('.dancer-row'));
     const dancers = dancerRows.map(r => ({
