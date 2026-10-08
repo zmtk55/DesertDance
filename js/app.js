@@ -252,13 +252,7 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
       genre: r.querySelector('.dancer-genre').value.trim(),
       modality_level: r.querySelector('.dancer-modality').value.trim(),
       category_id: categoryId
-    })).filter(d => d.full_name);
-
-    // Calcular precio total: precio por persona × número de bailarines registrados
-    const selectedCat = state.categories?.find(c => c.id === categoryId);
-    const pricePerPerson = selectedCat?.price || 0;
-    const dancerCount = dancers.length;
-    const totalPrice = pricePerPerson * dancerCount;
+     })).filter(d => d.full_name);
 
     try {
       const music = await uploadFile(musicFile, 'music', 'music');
@@ -280,7 +274,6 @@ const ageCategory = document.getElementById('team-age-category')?.value || null;
           contact_email: contactEmail,
           category_id: categoryId,
           age_category: ageCategory,
-          total_price: totalPrice,
           logo_path: logo.path,
           logo_url: logo.url,
           music_path: music.path,
