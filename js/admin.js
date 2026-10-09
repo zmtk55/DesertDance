@@ -47,6 +47,7 @@
     search: '',
     city: '',
     status: '',
+    modalidad: '',
     expanded: new Set(),
     currentView: localStorage.getItem('dd-admin-view') || 'table',
     recentTeams: JSON.parse(localStorage.getItem('dd-recent-teams') || '[]'),
@@ -497,7 +498,8 @@ async function fetchAll() {
       const matchSearch = !q || t.name.toLowerCase().includes(q) || (t.origin_city || '').toLowerCase().includes(q) || (t.contact_name || '').toLowerCase().includes(q);
       const matchCity = !state.city || (t.origin_city || '').toLowerCase() === state.city.toLowerCase();
       const matchStatus = !state.status || t.status === state.status;
-      return matchSearch && matchCity && matchStatus;
+      const matchModalidad = !state.modalidad || String(t.category_id) === String(state.modalidad);
+      return matchSearch && matchCity && matchStatus && matchModalidad;
     });
     state.page = 1;
   }
@@ -557,6 +559,10 @@ async function fetchAll() {
           <option value="">Todos los estatus</option>
           ${Object.entries(STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${state.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
         </select>
+        <select id="teams-filter-modalidad" class="bg-brand-dark-elevated/70 border border-brand-white-faint rounded-xl px-4 py-2.5 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+          <option value="">Todas las modalidades</option>
+          ${state.categories.map(c => `<option value="${esc(c.id)}" ${state.modalidad === String(c.id) ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+        </select>
       </div>
       
       <div id="teams-view-container"></div>
@@ -591,11 +597,12 @@ async function fetchAll() {
       container.innerHTML = `
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="w-full text-sm min-w-[800px]">
+            <table class="w-full text-sm min-w-[900px]">
               <thead><tr class="border-b border-brand-white-faint text-left">
                 <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Equipo</th>
                 <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Contacto</th>
                 <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Horario</th>
+                <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Modalidad</th>
                 <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Estatus</th>
                 <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold text-right">Acciones</th>
               </tr></thead>
@@ -615,7 +622,7 @@ async function fetchAll() {
           ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-16 h-16 rounded-xl object-contain bg-brand-dark/60 border border-brand-white-faint p-1">` : `<div class="w-11 h-11 rounded-xl bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 font-title font-bold">${esc(team.name.charAt(0))}</div>`}
           <div class="flex-1 min-w-0">
             <p class="font-semibold text-brand-white truncate text-sm">${esc(team.name)}</p>
-            <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')}</p>
+            <p class="text-[10px] text-brand-white-muted/60 truncate">${esc(team.origin_city || '—')}${catById(team.category_id) ? ' · ' + esc(catById(team.category_id).name) : ''}</p>
           </div>
         </div>
         <div class="flex items-center justify-between">
@@ -633,7 +640,7 @@ async function fetchAll() {
         ${team.logo_url ? `<img src="${esc(team.logo_url)}" class="w-12 h-12 rounded-lg object-contain bg-brand-dark/60 border border-brand-white-faint p-0.5">` : `<div class="w-9 h-9 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 text-xs font-bold">${esc(team.name.charAt(0))}</div>`}
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-brand-white truncate">${esc(team.name)}</p>
-          <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')} · ${esc(team.contact_name || '—')} · ${dancers} bailarines</p>
+          <p class="text-[10px] text-brand-white-muted/60">${esc(team.origin_city || '—')} · ${esc(team.contact_name || '—')} · ${dancers} bailarines${catById(team.category_id) ? ' · ' + esc(catById(team.category_id).name) : ''}</p>
         </div>
         <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 hidden sm:flex" style="color:${st.dot};background:${hexAlpha(st.dot, 0.12)}">${st.label}</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-white-muted/50"><polyline points="9 18 15 12 9 6"/></svg>
@@ -661,6 +668,7 @@ async function fetchAll() {
           <span class="block text-brand-white-muted/60">${esc(team.contact_phone || '')}</span>
         </td>
         <td class="px-5 py-3 text-brand-white-muted/70 text-xs">${sched}</td>
+        <td class="px-5 py-3 text-brand-white-muted/70 text-xs">${esc(catById(team.category_id)?.name || '—')}</td>
         <td class="px-5 py-3">
           <button data-action="cycle-status" data-id="${team.id}" class="badge text-[10px] font-bold rounded-full px-2.5 py-1 border transition-colors hover:border-brand-lime/30" style="border-color:${st.dot}40;color:${st.dot};background:${st.dot}12">
             <span class="badge-dot" style="background:${st.dot}"></span>${st.label}
@@ -686,10 +694,12 @@ async function fetchAll() {
     const search = $('teams-search');
     const filterCity = $('teams-filter-city');
     const filterStatus = $('teams-filter-status');
+    const filterModalidad = $('teams-filter-modalidad');
     
     if (search) search.addEventListener('input', (e) => { state.search = e.target.value; applyFilters(); renderTeamsView(); });
     if (filterCity) filterCity.addEventListener('change', (e) => { state.city = e.target.value; applyFilters(); renderTeamsView(); });
     if (filterStatus) filterStatus.addEventListener('change', (e) => { state.status = e.target.value; applyFilters(); renderTeamsView(); });
+    if (filterModalidad) filterModalidad.addEventListener('change', (e) => { state.modalidad = e.target.value; applyFilters(); renderTeamsView(); });
     
     document.querySelectorAll('[data-view]').forEach(btn => {
       btn.addEventListener('click', () => {
