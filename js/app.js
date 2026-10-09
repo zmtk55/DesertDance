@@ -259,6 +259,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const categoryId = document.getElementById('team-category')?.value || null;
     const ageCategory = document.getElementById('team-age-category')?.value || null;
     const educationLevel = document.getElementById('team-education-level')?.value || null;
+    const genre = document.getElementById('team-genre')?.value || '';
 
     const logoFile = form.querySelector('#team-logo').files[0];
     const musicFile = form.querySelector('#team-music').files[0];
@@ -267,7 +268,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const dancerRows = Array.from(dancersList.querySelectorAll('.dancer-row'));
     const dancers = dancerRows.map(r => ({
       full_name: r.querySelector('.dancer-name').value.trim(),
-      category_id: categoryId
+      category_id: categoryId,
+      genre: genre
     })).filter(d => d.full_name);
 
     try {
