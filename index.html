@@ -378,9 +378,9 @@
                   <option value="">— Selecciona una modalidad —</option>
                 </select>
              </div>
-             <div class="sm:col-span-2">
+             <div class="sm:col-span-2" id="age-category-field">
                 <label for="team-age-category" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Categorías por Edad <span class="text-brand-lime">*</span></label>
-                <select id="team-age-category" name="team-age-category" required class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors appearance-none bg-no-repeat bg-right pr-10" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d8e723%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')">
+                <select id="team-age-category" name="team-age-category" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors appearance-none bg-no-repeat bg-right pr-10" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d8e723%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')">
                   <option value="">— Selecciona una categoría por edad —</option>
                   <option value="Mini">Mini (8 años y menores)</option>
                   <option value="Junior">Junior (9 a 11 años)</option>
@@ -388,13 +388,22 @@
                   <option value="Senior">Senior (15 años en adelante)</option>
                 </select>
              </div>
-             <div class="sm:col-span-2">
+             <div class="sm:col-span-2" id="nivel-field">
                 <label for="team-modalidad" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Nivel de competencia <span class="text-brand-lime">*</span></label>
-                <select id="team-modalidad" name="team-modalidad" required class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors appearance-none bg-no-repeat bg-right pr-10" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d8e723%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')">
+                <select id="team-modalidad" name="team-modalidad" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors appearance-none bg-no-repeat bg-right pr-10" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d8e723%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')">
                   <option value="">— Selecciona nivel —</option>
                   <option value="principiante">Principiante</option>
                   <option value="medio">Medio</option>
                   <option value="avanzado">Avanzado</option>
+                </select>
+             </div>
+             <div class="sm:col-span-2 hidden" id="education-level-field">
+                <label for="team-education-level" class="block text-[11px] font-extrabold text-brand-white-muted/50 uppercase tracking-[0.18em] mb-2">Nivel educativo <span class="text-brand-lime">*</span></label>
+                <select id="team-education-level" name="team-education-level" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 sm:px-5 py-4 text-base sm:text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors appearance-none bg-no-repeat bg-right pr-10" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23d8e723%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')">
+                  <option value="">— Selecciona nivel educativo —</option>
+                  <option value="Primaria">Primaria</option>
+                  <option value="Secundaria">Secundaria</option>
+                  <option value="Preparatoria y Universidad">Preparatoria y Universidad</option>
                 </select>
              </div>
           </div>
@@ -428,7 +437,7 @@
             <button type="button" id="add-dancer" class="inline-flex items-center justify-center min-h-[44px] px-4 rounded-full border border-brand-lime/40 text-brand-lime text-xs font-bold uppercase tracking-[0.1em] hover:bg-brand-lime-dim transition-colors">+ Agregar bailarín</button>
           </div>
           <div id="dancers-list" class="space-y-3"></div>
-          <p class="text-brand-white-muted/40 text-xs">Opcional: puedes registrar el equipo y enviar la lista de bailarines después. Si agregas bailarines (solo si es un solista), pon su nombre completo. El género y nivel ya están definidos para todo el grupo.</p>
+          <p id="dancers-legend" class="text-brand-white-muted/40 text-xs">Opcional: puedes registrar el equipo y enviar la lista de bailarines después. Si agregas bailarines (solo si es un solista), pon su nombre completo. El género y nivel ya están definidos para todo el grupo.</p>
         </div>
 
         <p id="reg-error" class="hidden text-red-400 text-sm text-center pt-1"></p>
@@ -522,7 +531,7 @@
   <script src="js/supabase-config.js?v=2"></script>
   <script src="js/hero-logo.js"></script>
   <script src="js/hero-carousel.js"></script>
-  <script src="js/app.js?v=3"></script>
-  <script src="js/genre-carousel.js"></script>
+  <script src="js/app.js?v=4"></script>
+  <script src="js/genre-carousel.js?v=2"></script>
 </body>
 </html>

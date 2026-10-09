@@ -27,6 +27,32 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
+  function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+  function currentCategory() {
+    const sel = document.getElementById('team-category');
+    if (!sel || !sel.value) return null;
+    return state.categories.find(c => String(c.id) === String(sel.value)) || null;
+  }
+  function isColegial() { return norm(currentCategory()?.name) === 'colegial'; }
+
+  // Modo Colegial: sin edad ni nivel; en su lugar, nivel educativo. Leyenda del paso 3 según modalidad.
+  function applyCategoryMode() {
+    const cat = currentCategory();
+    const name = norm(cat?.name);
+    const cole = name === 'colegial';
+    document.getElementById('age-category-field')?.classList.toggle('hidden', cole);
+    document.getElementById('nivel-field')?.classList.toggle('hidden', cole);
+    document.getElementById('education-level-field')?.classList.toggle('hidden', !cole);
+    const legend = document.getElementById('dancers-legend');
+    if (legend && cat) {
+      const solista = ['solista', 'duo', 'trios', 'tercias'].includes(name);
+      legend.textContent = solista
+        ? 'Anota el nombre de los bailarines y el género de tu rutina antes de finalizar.'
+        : 'Te contactaremos por WhatsApp para que envíes el listado completo de tu equipo y el género de tu rutina.';
+    }
+  }
+  if (categorySelect) categorySelect.addEventListener('change', applyCategoryMode);
+
   const STEP_LABELS = { 1: 'Paso 1 de 3', 2: 'Paso 2 de 3', 3: 'Paso 3 de 3' };
   const panels = Array.from(form.querySelectorAll('.step-panel'));
   const stepBack = document.getElementById('step-back');
@@ -81,10 +107,15 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!contact) { showError('Escribe el nombre del capitán o representante.'); return false; }
       if (!email) { showError('Escribe el correo del contacto.'); return false; }
       if (!category) { showError('Selecciona la modalidad de competencia.'); return false; }
-      const ageCat = document.getElementById('team-age-category')?.value || '';
-      if (!ageCat) { showError('Selecciona una categoría por edad.'); return false; }
-      const nivel = document.getElementById('team-modalidad')?.value || '';
-      if (!nivel) { showError('Selecciona el nivel de competencia (principiante / medio / avanzado).'); return false; }
+      if (isColegial()) {
+        const edu = document.getElementById('team-education-level')?.value || '';
+        if (!edu) { showError('Selecciona el nivel educativo.'); return false; }
+      } else {
+        const ageCat = document.getElementById('team-age-category')?.value || '';
+        if (!ageCat) { showError('Selecciona una categoría por edad.'); return false; }
+        const nivel = document.getElementById('team-modalidad')?.value || '';
+        if (!nivel) { showError('Selecciona el nivel de competencia (principiante / medio / avanzado).'); return false; }
+      }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Revisa el correo: parece no ser válido.'); return false; }
       return true;
     }
@@ -227,6 +258,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const contactEmail = form.querySelector('#contact-email').value.trim();
     const categoryId = document.getElementById('team-category')?.value || null;
     const ageCategory = document.getElementById('team-age-category')?.value || null;
+    const educationLevel = document.getElementById('team-education-level')?.value || null;
 
     const logoFile = form.querySelector('#team-logo').files[0];
     const musicFile = form.querySelector('#team-music').files[0];
@@ -258,7 +290,8 @@ document.addEventListener('DOMContentLoaded', async function () {
           contact_phone: contactPhone,
           contact_email: contactEmail,
           category_id: categoryId,
-          age_category: ageCategory,
+          // Reutiliza age_category para el nivel educativo en Colegial (no hay columna propia).
+          age_category: isColegial() ? educationLevel : ageCategory,
           logo_path: logo.path,
           logo_url: logo.url,
           music_path: music.path,
