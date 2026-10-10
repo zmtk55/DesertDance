@@ -7,11 +7,9 @@
     { name: 'Urbano',      color: '#ef4444', icon: 'urban' },
     { name: 'Poms',        color: '#ec4899', icon: 'poms' },
     { name: 'Open',        color: '#14b8a6', icon: 'open' },
-    { name: 'Lírico',      color: '#d8e723', icon: 'lyric' },
   ];
 
   const track = document.getElementById('genre-track');
-  const dotsContainer = document.getElementById('genre-dots');
   if (!track) return;
 
   const SVG = {
@@ -22,7 +20,6 @@
     poms: '<circle cx="5" cy="6" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="9" cy="13" r="2"/><circle cx="16" cy="13" r="2"/><path d="M5 8v5M12 6v7M19 8v5M9 15l3 4h4l3-4"/>',
     open: '<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>',
     exhib: '<path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/>',
-    lyric: '<circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/>',
   };
 
   function cardHTML(g) {
@@ -59,9 +56,6 @@
   function render() {
     track.innerHTML = GENRES.map(cardHTML).join('');
     cardWidth = measure();
-    dotsContainer.innerHTML = Array.from({ length: total }, (_, i) =>
-      `<button data-gidx="${i}" class="w-2 h-2 rounded-full transition-all duration-300 ${i === index ? 'bg-brand-lime w-6' : 'bg-brand-white-faint'}"></button>`
-    );
     track.style.transform = `translateX(-${index * cardWidth}px)`;
   }
 
@@ -82,13 +76,6 @@
   const next = document.getElementById('genre-next');
   if (prev) prev.addEventListener('click', () => { go(index - 1); stopAuto(); startAuto(); });
   if (next) next.addEventListener('click', () => { go(index + 1); stopAuto(); startAuto(); });
-  dotsContainer.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-gidx]');
-    if (!b) return;
-    index = parseInt(b.dataset.gidx, 10);
-    render();
-    stopAuto(); startAuto();
-  });
 
   // Swipe móvil
   let touchStartX = 0;

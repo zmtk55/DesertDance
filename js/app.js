@@ -107,6 +107,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!contact) { showError('Escribe el nombre del capitán o representante.'); return false; }
       if (!email) { showError('Escribe el correo del contacto.'); return false; }
       if (!category) { showError('Selecciona la modalidad de competencia.'); return false; }
+      const genre = document.getElementById('team-genre')?.value || '';
+      if (!genre) { showError('Selecciona el género de la rutina.'); return false; }
       if (isColegial()) {
         const edu = document.getElementById('team-education-level')?.value || '';
         if (!edu) { showError('Selecciona el nivel educativo.'); return false; }
