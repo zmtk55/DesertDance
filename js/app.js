@@ -45,10 +45,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('education-level-field')?.classList.toggle('hidden', !cole);
     const legend = document.getElementById('dancers-legend');
     if (legend && cat) {
-      const solista = ['solista', 'duo', 'trios', 'tercias'].includes(name);
-      legend.textContent = solista
-        ? 'Anota el nombre de los bailarines y el género de tu rutina antes de finalizar.'
-        : 'Te contactaremos por WhatsApp para que envíes el listado completo de tu equipo y el género de tu rutina.';
+      legend.textContent = 'Anota el nombre de todos los participantes de tu equipo antes de finalizar.';
     }
   }
   if (categorySelect) categorySelect.addEventListener('change', applyCategoryMode);
