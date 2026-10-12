@@ -45,7 +45,7 @@
       slides = data;
       track.innerHTML = slides.map(s => `
         <div class="absolute inset-0 transition-opacity duration-700 ease-out">
-          <img src="${s.image_url}" alt="${(s.title || 'Desert Dance').replace(/"/g, '&quot;')}" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.05]">
+          <img src="${(s.image_url || '').replace(/[<>&"']/g, c => ({'<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'}[c]))}" alt="${(s.title || 'Desert Dance').replace(/[<>&"']/g, c => ({'<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'}[c]))}" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.05]">
           ${(s.title || s.caption) ? `
             <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/30 to-transparent"></div>
             <div class="absolute bottom-0 left-0 right-0 px-6 md:px-16 pb-10 md:pb-16 max-w-6xl mx-auto w-full">

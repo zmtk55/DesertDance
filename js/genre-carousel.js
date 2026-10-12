@@ -21,7 +21,7 @@
     poms: '<circle cx="5" cy="6" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="9" cy="13" r="2"/><circle cx="16" cy="13" r="2"/><path d="M5 8v5M12 6v7M19 8v5M9 15l3 4h4l3-4"/>',
     open: '<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>',
     exhib: '<path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/>',
-    lyric: '<circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/>',
+    lyric: '<path d="M6 3h12v13a3 3 0 1 1-2-2.83V7H8v9a3 3 0 1 1-2-2.83z"/>',
   };
 
   function cardHTML(g) {

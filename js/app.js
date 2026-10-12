@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
 
-  async function uploadFile(file, prefix, folder) {
+  async function uploadFile(file, folder) {
     const safeName = (file.name || 'file')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -259,6 +259,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const ageCategory = document.getElementById('team-age-category')?.value || null;
     const educationLevel = document.getElementById('team-education-level')?.value || null;
     const genre = document.getElementById('team-genre')?.value || '';
+    const modalidad = document.getElementById('team-modalidad')?.value || '';
 
     const logoFile = form.querySelector('#team-logo').files[0];
     const musicFile = form.querySelector('#team-music').files[0];
@@ -270,14 +271,15 @@ document.addEventListener('DOMContentLoaded', async function () {
       category_id: categoryId,
       genre: genre
     })).filter(d => d.full_name);
+    const totalPrice = (currentCategory()?.price || 0) * dancers.length;
 
     try {
-      const music = await uploadFile(musicFile, 'music', 'music');
+      const music = await uploadFile(musicFile, 'music');
       updateProgress('Música subida · Subiendo logo…', 65);
 
       let logo = { path: null, url: null };
       if (logoFile) {
-        logo = await uploadFile(logoFile, 'logo', 'logos');
+        logo = await uploadFile(logoFile, 'logos');
       }
 
       const teamId = newUuid();
@@ -291,6 +293,8 @@ document.addEventListener('DOMContentLoaded', async function () {
           contact_phone: contactPhone,
           contact_email: contactEmail,
           category_id: categoryId,
+          modalidad,
+          total_price: totalPrice,
           // Reutiliza age_category para el nivel educativo en Colegial (no hay columna propia).
           age_category: isColegial() ? educationLevel : ageCategory,
           logo_path: logo.path,
