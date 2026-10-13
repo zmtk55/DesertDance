@@ -216,7 +216,7 @@ async function fetchAll() {
     return id;
   }
 
-  const toUuidOrNull = (v) => (v && typeof v === 'string' && v.trim() && v.trim() !== 'undefined' ? v.trim() : null);
+  const toUuidOrNull = (v) => (v && typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.trim()) ? v.trim() : null);
 
   async function updateTeam(id, data) {
     if ('category_id' in data) data.category_id = toUuidOrNull(data.category_id);
