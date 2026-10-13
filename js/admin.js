@@ -2069,8 +2069,8 @@ function openCarouselModal(img = null) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const dayTeams = state.teams.filter(t => {
         if (!t.scheduled_time) return false;
-        const d = new Date(t.scheduled_time);
-        return d.getFullYear() === year && d.getMonth() === month && d.getDate() === d;
+         const dt = new Date(t.scheduled_time);
+         return dt.getFullYear() === year && dt.getMonth() === month && dt.getDate() === d;
       });
       const hasSchedule = dayTeams.length > 0;
       const isToday = calendarMonthOffset === 0 && d === now.getDate();
