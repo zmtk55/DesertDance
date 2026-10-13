@@ -1458,7 +1458,7 @@ function openDancerModal(teamId, dancer = null) {
       contact_name: $('tf-contact').value.trim(),
       contact_phone: $('tf-phone').value.trim(),
       contact_email: $('tf-email').value.trim(),
-      category_id: $('tf-category').value || null,
+      category_id: (() => { const v = $('tf-category').value; return v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ? v : null; })(),
       scheduled_time: $('tf-schedule').value ? new Date($('tf-schedule').value).toISOString() : null,
       status: $('tf-status').value,
       notes: $('tf-notes').value.trim()
@@ -1547,7 +1547,7 @@ function openDancerModal(teamId, dancer = null) {
       genre: $('df-genre').value.trim(),
       modality_level: $('df-modality').value.trim(),
       routine_title: $('df-routine').value.trim(),
-      category_id: $('df-category').value || null,
+      category_id: (() => { const v = $('df-category').value; return v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ? v : null; })(),
       email: team?.contact_email || '',
       school_name: team?.name || '',
       status: 'pending'
