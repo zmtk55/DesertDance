@@ -108,7 +108,7 @@
   // ============================================================
 async function fetchAll() {
     const [teams, categories, settings, admins, carousel, eventLogo, auditLog] = await Promise.all([
-      supabase.from('teams').select('*, participants(id, full_name, genre, modality_level, routine_title, email, status)').order('created_at', { ascending: false }),
+      supabase.from('teams').select('*, participants(id, team_id, full_name, genre, modality_level, routine_title, category_id, email, school_name, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
       supabase.from('admin_users').select('*'),
@@ -1289,7 +1289,7 @@ const catById = (id) => state.categories.find(c => c.id === id) || null;
 function openDancerModal(teamId, dancer = null) {
     $('dancer-modal-title').textContent = dancer ? 'Editar bailarín' : ' agregar bailarín';
     $('df-id').value = dancer?.id || '';
-    $('df-team-id').value = teamId;
+    $('df-team-id').value = teamId || dancer?.team_id || '';
     $('df-name').value = dancer?.full_name || '';
     $('df-genre').value = dancer?.genre || '';
     $('df-modality').value = dancer?.modality_level || '';
@@ -1396,7 +1396,7 @@ function openDancerModal(teamId, dancer = null) {
         case 'delete-team': { const t = state.teams.find(x => x.id === id); openDeleteModal('¿Eliminar equipo?', `Vas a eliminar a ${t?.name || 'este equipo'} y todos sus datos.`, async () => { await deleteTeam(id); state.teams = state.teams.filter(x => x.id !== id); delete state.dancersByTeam[id]; delete state.teamData[id]; navigate(); }); break; }
         case 'cycle-status': { const t = state.teams.find(x => x.id === id); if (!t) break; const order = ['pending', 'confirmed', 'rejected', 'waitlist']; const next = order[(order.indexOf(t.status) + 1) % order.length]; await updateTeam(id, { status: next }); t.status = next; navigate(); toast(`Estatus → ${STATUS_LABELS[next].label}`); break; }
         case 'add-dancer': openDancerModal(teamId); break;
-        case 'edit-dancer': { const d = (state.dancersByTeam[resolveRoute().teamId] || []).find(x => x.id === id); if (d) openDancerModal(d.team_id, d); break; }
+        case 'edit-dancer': { const d = (state.dancersByTeam[resolveRoute().teamId] || []).find(x => x.id === id); if (d) openDancerModal(d.team_id || resolveRoute().teamId, d); break; }
         case 'delete-dancer': openDeleteModal('¿Eliminar bailarín?', 'Esta acción no se puede deshacer.', async () => { await deleteDancer(id); const tid = resolveRoute().teamId; state.dancersByTeam[tid] = (state.dancersByTeam[tid] || []).filter(x => x.id !== id); delete state.teamData[tid]; navigate(); }); break;
         case 'add-payment': openPaymentModal(teamId); break;
         case 'edit-payment': { const tid = resolveRoute().teamId; const d = state.teamData[tid]; const p = d?.payments?.all?.find(x => x.id === id); if (p) openPaymentModal(tid, p); break; }
