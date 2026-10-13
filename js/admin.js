@@ -209,13 +209,17 @@ async function fetchAll() {
   // ============================================================
   async function createTeam(data) {
     const id = crypto.randomUUID();
+    if ('category_id' in data) data.category_id = toUuidOrNull(data.category_id);
     const { error } = await supabase.from('teams').insert([{ id, ...data, status: data.status || 'pending' }]);
     if (error) throw error;
     await logAction('create', 'team', id, data);
     return id;
   }
 
+  const toUuidOrNull = (v) => (v && typeof v === 'string' && v.trim() && v.trim() !== 'undefined' ? v.trim() : null);
+
   async function updateTeam(id, data) {
+    if ('category_id' in data) data.category_id = toUuidOrNull(data.category_id);
     const { error } = await supabase.from('teams').update(data).eq('id', id);
     if (error) throw error;
     await logAction('update', 'team', id, data);
@@ -228,12 +232,14 @@ async function fetchAll() {
   }
 
   async function createDancer(data) {
+    if ('category_id' in data) data.category_id = toUuidOrNull(data.category_id);
     const { error } = await supabase.from('participants').insert([data]);
     if (error) throw error;
     await logAction('create', 'dancer', data.team_id, { full_name: data.full_name });
   }
 
   async function updateDancer(id, data) {
+    if ('category_id' in data) data.category_id = toUuidOrNull(data.category_id);
     const { error } = await supabase.from('participants').update(data).eq('id', id);
     if (error) throw error;
     await logAction('update', 'dancer', id, data);
@@ -958,11 +964,11 @@ async function fetchAll() {
           <div id="schedule-edit" class="hidden mt-4 space-y-3">
             <div>
               <label class="block text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Fecha</label>
-              <input id="inline-date" type="date" value="${sched ? sched.toISOString().slice(0, 10) : ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+              <input id="inline-date" type="date" value="${sched ? `${sched.getFullYear()}-${String(sched.getMonth() + 1).padStart(2, '0')}-${String(sched.getDate()).padStart(2, '0')}` : ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
             </div>
             <div>
               <label class="block text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] mb-1.5">Hora</label>
-              <input id="inline-time" type="time" value="${sched ? sched.toTimeString().slice(0, 5) : ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
+              <input id="inline-time" type="time" value="${sched ? `${String(sched.getHours()).padStart(2, '0')}:${String(sched.getMinutes()).padStart(2, '0')}` : ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-3 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40 transition-colors">
             </div>
             <div class="flex gap-2 mt-1">
               <button id="save-schedule" data-team="${team.id}" class="flex-1 bg-brand-lime text-brand-dark font-extrabold text-xs uppercase tracking-[0.12em] py-2.5 rounded-xl hover:bg-brand-lime-hover transition-colors">Guardar</button>
@@ -1267,7 +1273,7 @@ const catById = (id) => state.categories.find(c => c.id === id) || null;
     $('tf-contact').value = team?.contact_name || '';
     $('tf-phone').value = team?.contact_phone || '';
     $('tf-email').value = team?.contact_email || '';
-    $('tf-schedule').value = team?.scheduled_time ? team.scheduled_time.slice(0, 16) : '';
+    $('tf-schedule').value = '';
     $('tf-status').value = team?.status || 'pending';
     $('tf-notes').value = team?.notes || '';
 
@@ -2061,14 +2067,22 @@ function openCarouselModal(img = null) {
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const dayTeams = state.teams.filter(t => t.scheduled_time && t.scheduled_time.startsWith(dateStr));
+      const dayTeams = state.teams.filter(t => {
+        if (!t.scheduled_time) return false;
+        const d = new Date(t.scheduled_time);
+        return d.getFullYear() === year && d.getMonth() === month && d.getDate() === d;
+      });
       const hasSchedule = dayTeams.length > 0;
       const isToday = calendarMonthOffset === 0 && d === now.getDate();
       grid.innerHTML += `<div class="p-2 min-w-[44px] min-h-[44px] rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center ${hasSchedule ? 'bg-brand-lime/15 text-brand-lime font-bold' : 'text-brand-white-muted/50 hover:bg-brand-white-faint'} ${isToday ? 'ring-1 ring-brand-lime/50' : ''}">${d}${hasSchedule ? `<span class="block text-[9px] font-bold">${dayTeams.length}</span>` : ''}</div>`;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    const todayTeams = state.teams.filter(t => t.scheduled_time && t.scheduled_time.startsWith(today));
+    const today = new Date();
+    const todayTeams = state.teams.filter(t => {
+      if (!t.scheduled_time) return false;
+      const d = new Date(t.scheduled_time);
+      return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+    });
     list.innerHTML = todayTeams.length
       ? todayTeams.map(t => `
           <div class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-3 flex items-center justify-between">
