@@ -36,6 +36,7 @@
     teams: [],
     dancersByTeam: {},
     teamData: {},
+    payments: [],
     categories: [],
     carousel: [],
     eventLogo: null,
@@ -107,7 +108,7 @@
   // DATA FETCHING
   // ============================================================
 async function fetchAll() {
-    const [teams, categories, settings, admins, carousel, eventLogo, auditLog] = await Promise.all([
+    const [teams, categories, settings, admins, carousel, eventLogo, auditLog, payments] = await Promise.all([
       supabase.from('teams').select('*, participants(id, team_id, full_name, genre, modality_level, routine_title, category_id, email, school_name, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
@@ -115,10 +116,12 @@ async function fetchAll() {
       supabase.from('carousel_images').select('*').order('sort_order', { ascending: true }),
       supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle(),
       supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('payments').select('id, team_id, amount, status'),
     ]);
 
     if (teams.error) throw teams.error;
     state.teams = teams.data || [];
+    state.payments = payments.data || [];
 
     state.categories = (categories.data || []).sort((a, b) => a.sort_order - b.sort_order);
 
@@ -430,6 +433,19 @@ async function fetchAll() {
     const total = state.teams.length;
     const count = (s) => state.teams.filter(t => t.status === s).length;
     const totalDancers = Object.values(state.dancersByTeam).reduce((a, d) => a + d.length, 0);
+
+    // Saldo pendiente por equipo: todo lo que no está completado ni reembolsado.
+    const saldo = {};
+    for (const p of state.payments) {
+      if (['completed', 'refunded'].includes(p.status)) continue;
+      saldo[p.team_id] = (saldo[p.team_id] || 0) + Number(p.amount || 0);
+    }
+    const deudas = state.teams
+      .map(t => ({ t, amount: saldo[t.id] || 0 }))
+      .filter(d => d.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
+    const totalCobrado = state.payments.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount || 0), 0);
+    const totalCobrar = deudas.reduce((s, d) => s + d.amount, 0);
     
     container.innerHTML = `
       <div class="mb-8">
@@ -471,6 +487,40 @@ async function fetchAll() {
         </a>
       </div>
       
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-brand-white-muted/60 text-xs uppercase tracking-[0.2em] font-extrabold">Cobros pendientes</h3>
+          <a href="#payments-global" class="text-brand-lime text-xs font-bold hover:underline">Ver todos los pagos</a>
+        </div>
+        <div class="grid grid-cols-3 gap-4 mb-4">
+          <div class="bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+            <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Cobrado</p>
+            <p class="font-title text-3xl font-black text-brand-lime">$${formatAmount(totalCobrado)}</p>
+          </div>
+          <div class="bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+            <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Falta por saldar</p>
+            <p class="font-title text-3xl font-black text-brand-warn">$${formatAmount(totalCobrar)}</p>
+          </div>
+          <div class="bg-brand-dark-elevated/70 rounded-2xl p-5 border border-brand-white-faint">
+            <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">Equipos con saldo</p>
+            <p class="font-title text-3xl font-black text-brand-white">${deudas.length}</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          ${deudas.slice(0, 8).map(({ t, amount }) => `
+            <div class="flex flex-wrap items-center gap-3 bg-brand-dark-elevated/30 rounded-xl border border-brand-white-faint px-4 py-3">
+              <div class="w-8 h-8 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 text-xs font-bold flex-shrink-0">${esc(t.name.charAt(0))}</div>
+              <div class="flex-1 min-w-[140px]">
+                <a href="#team/${t.id}/payments" class="text-sm font-semibold text-brand-white hover:text-brand-lime transition-colors">${esc(t.name)}</a>
+                <p class="text-[10px] text-brand-white-muted/60">${esc(t.contact_name || 'Sin contacto')}</p>
+              </div>
+              <span class="font-title font-bold text-brand-warn">$${formatAmount(amount)}</span>
+              ${t.contact_phone ? `<a href="tel:${esc(t.contact_phone)}" class="text-xs text-brand-white-muted/70 hover:text-brand-lime font-mono transition-colors" title="Llamar">${esc(t.contact_phone)}</a>` : '<span class="text-[10px] text-brand-white-muted/40">Sin teléfono</span>'}
+              ${t.contact_phone ? `<a href="https://wa.me/52${esc(t.contact_phone.replace(/\D/g, ''))}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] hover:bg-emerald-500/25 transition-colors">Cobrar</a>` : ''}
+            </div>`).join('') || '<p class="text-brand-white-muted/50 text-sm py-8 text-center">Ningún equipo tiene saldo pendiente 🎉</p>'}
+        </div>
+      </div>
+
       <div>
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-brand-white-muted/60 text-xs uppercase tracking-[0.2em] font-extrabold">Últimos registros</h3>
@@ -948,6 +998,18 @@ async function fetchAll() {
   // -- Tab: Calendar --
   function renderCalendarTab(team, container) {
     const sched = team.scheduled_time ? new Date(team.scheduled_time) : null;
+    const dancers = state.dancersByTeam[team.id] || [];
+    const cat = catById(team.category_id);
+    const checks = [
+      { ok: !!(team.logo_url || team.logo_path), label: 'Logo del equipo', hint: team.logo_url || team.logo_path || 'Sin logo' },
+      { ok: !!(team.music_url || team.music_path), label: 'Música (MP3)', hint: team.music_url || team.music_path || 'Sin audio' },
+      { ok: dancers.length > 0, label: 'Participantes', hint: dancers.length ? `${dancers.length} — ${dancers.map(d => d.full_name).join(', ')}` : 'Sin participantes' },
+      { ok: !!cat, label: 'Modalidad', hint: cat?.name || 'Sin modalidad' },
+      { ok: !!team.age_category, label: 'Categoría de edad', hint: team.age_category || 'Sin definir' },
+      { ok: !!(team.contact_name && team.contact_phone), label: 'Contacto', hint: team.contact_phone ? `${team.contact_name || ''} · ${team.contact_phone}`.trim() : 'Sin teléfono' },
+      { ok: !!sched, label: 'Horario de presentación', hint: sched ? sched.toLocaleString('es-MX') : 'Sin programar' },
+    ];
+    const ready = checks.filter(c => c.ok).length;
     container.innerHTML = `
       <div class="grid md:grid-cols-2 gap-6">
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
@@ -977,12 +1039,24 @@ async function fetchAll() {
           </div>
         </div>
         <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-6">
-          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-4">Evento</p>
-          <div class="space-y-3 text-sm">
-            <div class="flex justify-between"><span class="text-brand-white-muted/50">Fechas F1</span><span class="text-brand-white">${esc(state.eventSettings.event_dates_phase1 || '—')}</span></div>
-            <div class="flex justify-between"><span class="text-brand-white-muted/50">Fechas F2</span><span class="text-brand-white">${esc(state.eventSettings.event_dates_phase2 || '—')}</span></div>
-            <div class="flex justify-between"><span class="text-brand-white-muted/50">Ubicación</span><span class="text-brand-white">${esc(state.eventSettings.event_location || '—')}</span></div>
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold">Checklist del equipo</p>
+            <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5" style="color:${ready === checks.length ? '#d8e723' : '#f0a92e'};background:${ready === checks.length ? 'rgba(216,231,35,0.12)' : 'rgba(240,169,46,0.12)'}">${ready}/${checks.length} en orden</span>
           </div>
+          <ul class="space-y-2.5">
+            ${checks.map(c => `
+              <li class="flex items-start gap-3">
+                <span class="mt-0.5 w-4 h-4 flex-shrink-0 rounded-full flex items-center justify-center" style="background:${c.ok ? 'rgba(216,231,35,0.15)' : 'rgba(240,169,46,0.15)'}">
+                  ${c.ok
+                    ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
+                    : '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f0a92e" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'}
+                </span>
+                <span class="min-w-0">
+                  <span class="block text-sm ${c.ok ? 'text-brand-white' : 'text-brand-warn'}">${esc(c.label)}</span>
+                  <span class="block text-[11px] text-brand-white-muted/60 break-words">${esc(c.hint)}</span>
+                </span>
+              </li>`).join('')}
+          </ul>
         </div>
       </div>`;
   }
