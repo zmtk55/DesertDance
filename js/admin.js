@@ -37,7 +37,6 @@
     dancersByTeam: {},
     teamData: {},
     payments: [],
-    scores: [],
     reportRange: { from: '', to: '' },
     auditFilters: { q: '', action: '' },
     categories: [],
@@ -82,26 +81,17 @@
     return bytes + ' B';
   }
 
-  // Criterios del sistema de 100 puntos descrito en puntos.html.
-  const SCORE_CRITERIA = [
-    { key: 'tecnica', label: 'Técnica', max: 25 },
-    { key: 'ejecucion', label: 'Ejecución', max: 15 },
-    { key: 'musicalidad', label: 'Musicalidad', max: 10 },
-    { key: 'interpretacion', label: 'Interpretación', max: 10 },
-    { key: 'creatividad', label: 'Creatividad', max: 10 },
-    { key: 'composicion', label: 'Composición', max: 15 },
-    { key: 'espacio', label: 'Espacio', max: 5 },
-    { key: 'presencia', label: 'Presencia', max: 10 },
-  ];
-
-  const scoreTotal = (s) => SCORE_CRITERIA.reduce((a, c) => a + (Number(s[c.key]) || 0), 0);
-
-  // Saldo pendiente por equipo: todo pago que no está completado ni reembolsado.
+  // Saldo pendiente por equipo. El registro no crea filas en `payments`: el monto
+  // que se debe vive en teams.total_price, y los pagos se registran a mano. Se
+  // toma el mayor de los dos para no duplicar cuando ya existe un cargo pendiente.
   function pendingByTeam() {
     const map = {};
-    for (const p of state.payments) {
-      if (['completed', 'refunded'].includes(p.status)) continue;
-      map[p.team_id] = (map[p.team_id] || 0) + Number(p.amount || 0);
+    for (const t of state.teams) {
+      const ps = state.payments.filter(p => p.team_id === t.id);
+      const pendienteCargos = ps.filter(p => !['completed', 'refunded'].includes(p.status)).reduce((s, p) => s + Number(p.amount || 0), 0);
+      const pagado = ps.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount || 0), 0);
+      const saldo = Math.max(pendienteCargos, (Number(t.total_price) || 0) - pagado, 0);
+      if (saldo > 0) map[t.id] = saldo;
     }
     return map;
   }
@@ -169,7 +159,6 @@
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return null; }
     $('admin-email').textContent = session.user.email;
-    state.judgeName = session.user.email;
     return session;
   }
 
@@ -177,7 +166,7 @@
   // DATA FETCHING
   // ============================================================
 async function fetchAll() {
-    const [teams, categories, settings, admins, carousel, eventLogo, auditLog, payments, scores] = await Promise.all([
+    const [teams, categories, settings, admins, carousel, eventLogo, auditLog, payments] = await Promise.all([
       supabase.from('teams').select('*, participants(id, team_id, full_name, genre, modality_level, routine_title, category_id, email, school_name, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
@@ -186,13 +175,11 @@ async function fetchAll() {
       supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle(),
       supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(500),
       supabase.from('payments').select('*'),
-      supabase.from('scores').select('*'),
     ]);
 
     if (teams.error) throw teams.error;
     state.teams = teams.data || [];
     state.payments = payments.data || [];
-    state.scores = scores.data || [];
 
     state.categories = (categories.data || []).sort((a, b) => a.sort_order - b.sort_order);
 
@@ -1338,15 +1325,6 @@ function renderReports(container) {
       }).filter(m => m.equipos > 0 || m.cobrado > 0 || m.saldo > 0);
       const maxMod = Math.max(1, ...porModalidad.map(m => m.cobrado + m.saldo));
 
-      // Ranking: promedio de los jueces por equipo.
-      const porEquipo = {};
-      for (const s of state.scores) (porEquipo[s.team_id] ||= []).push(s);
-      const ranking = Object.entries(porEquipo).map(([tid, ss]) => ({
-        team: state.teams.find(t => t.id === tid),
-        avg: ss.reduce((a, s) => a + scoreTotal(s), 0) / ss.length,
-        jueces: ss.length,
-      })).filter(r => r.team).sort((a, b) => b.avg - a.avg);
-
       const EXPORTS = [
         ['export-teams', 'Equipos', 'Inscripciones con categoría y estatus'],
         ['export-dancers', 'Bailarines', 'Participantes por equipo'],
@@ -1354,7 +1332,6 @@ function renderReports(container) {
         ['export-debtors', 'Deudores', 'Saldo y teléfono para cobrar'],
         ['export-schedule', 'Programación', 'Orden de presentación'],
         ['export-logistics', 'Logística', 'Logo, mp3 y checklist'],
-        ['export-scores', 'Resultados', 'Calificación y ranking'],
       ];
 
       const auditRows = (state.auditLog || []).filter(a => {
@@ -1433,47 +1410,6 @@ function renderReports(container) {
             </button>`).join('')}
         </div>
 
-        <div class="grid lg:grid-cols-2 gap-6 mb-8 no-print">
-          <div>
-            <h3 class="font-title text-lg font-black text-brand-white mb-1">Resultados</h3>
-            <p class="text-[10px] text-brand-white-muted/60 mb-4">Captura del juez ${esc(state.judgeName || '')} · 100 pts en ${SCORE_CRITERIA.length} criterios</p>
-            ${ranking.length ? `
-            <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden mb-4">
-              <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
-                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">#</th>
-                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Equipo</th>
-                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-right">Promedio</th>
-                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-right">Jueces</th>
-              </tr></thead><tbody>
-                ${ranking.map((r, i) => `
-                  <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
-                    <td class="px-4 py-2.5 font-title font-black ${i < 3 ? 'text-brand-lime' : 'text-brand-white-muted/40'}">${i + 1}</td>
-                    <td class="px-4 py-2.5 text-brand-white font-medium">${esc(r.team.name)}</td>
-                    <td class="px-4 py-2.5 font-title font-bold text-brand-white text-right">${r.avg.toFixed(1)}</td>
-                    <td class="px-4 py-2.5 text-brand-white-muted/60 text-xs text-right">${r.jueces}</td>
-                  </tr>`).join('')}
-              </tbody></table>
-            </div>` : '<p class="text-brand-white-muted/50 text-sm mb-4">Sin calificación capturada todavía.</p>'}
-            <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-x-auto">
-              <table class="w-full text-xs"><thead><tr class="border-b border-brand-white-faint text-left">
-                <th class="px-3 py-2.5 text-[10px] text-brand-white-muted/60 uppercase font-extrabold sticky left-0 bg-brand-dark-elevated">Equipo</th>
-                ${SCORE_CRITERIA.map(c => `<th class="px-2 py-2.5 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-center" title="máx ${c.max}">${c.label.slice(0, 4)}<span class="text-brand-white-muted/30">/${c.max}</span></th>`).join('')}
-                <th class="px-3 py-2.5 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-center">Total</th>
-                <th class="px-3 py-2.5"></th>
-              </tr></thead><tbody>
-                ${equipos.map(t => {
-                  const mine = state.scores.find(s => s.team_id === t.id && s.judge_name === state.judgeName) || {};
-                  return `<tr class="border-b border-brand-white-faint/40">
-                    <td class="px-3 py-2 text-brand-white font-medium sticky left-0 bg-brand-dark-elevated max-w-[140px] truncate">${esc(t.name)}</td>
-                    ${SCORE_CRITERIA.map(c => `<td class="px-1 py-1.5"><input type="number" min="0" max="${c.max}" step="0.5" data-score="${t.id}" data-crit="${c.key}" value="${mine[c.key] ?? ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-1.5 py-1.5 text-center text-brand-white focus:outline-none focus:border-brand-lime/40"></td>`).join('')}
-                    <td class="px-3 py-2 font-title font-bold text-brand-lime text-center" data-total="${t.id}">${mine.tecnica !== undefined ? scoreTotal(mine) : '—'}</td>
-                    <td class="px-3 py-2"><button data-action="save-score" data-id="${t.id}" class="px-3 py-1.5 rounded-lg bg-brand-lime/15 text-brand-lime text-[10px] font-extrabold uppercase tracking-wider hover:bg-brand-lime/25 transition-colors">Guardar</button></td>
-                  </tr>`;
-                }).join('') || '<tr><td colspan="11" class="px-3 py-8 text-center text-brand-white-muted/50">Sin equipos en el periodo</td></tr>'}
-              </tbody></table>
-            </div>
-          </div>
-
           <div>
             <h3 class="font-title text-lg font-black text-brand-white mb-4">Log de auditoría</h3>
             <div class="flex gap-2 mb-4">
@@ -1503,7 +1439,7 @@ function renderReports(container) {
           </div>
         </div>
 
-        ${printSummary(equipos, cobrado, porCobrar, pctCobro, ranking)}`;
+        ${printSummary(equipos, cobrado, porCobrar, pctCobro)}`;
 
       wireReportEvents(container);
     }
@@ -1534,38 +1470,12 @@ function renderReports(container) {
     });
     container.querySelector('#audit-action')?.addEventListener('change', e => { state.auditFilters.action = e.target.value; rerender(); });
 
-    container.querySelectorAll('[data-score]').forEach(inp => {
-      inp.addEventListener('input', () => {
-        const teamId = inp.dataset.score;
-        let sum = 0;
-        container.querySelectorAll(`[data-score="${teamId}"]`).forEach(i => sum += Number(i.value) || 0);
-        const cell = container.querySelector(`[data-total="${teamId}"]`);
-        if (cell) cell.textContent = sum;
-      });
-    });
-
-    container.querySelectorAll('[data-action="save-score"]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const teamId = btn.dataset.id;
-        const payload = { team_id: teamId, judge_name: state.judgeName };
-        let bad = null;
-        for (const c of SCORE_CRITERIA) {
-          const inp = container.querySelector(`[data-score="${teamId}"][data-crit="${c.key}"]`);
-          const v = Number(inp?.value) || 0;
-          if (v > c.max) { bad = `${c.label} (máx ${c.max})`; inp.value = c.max; payload[c.key] = c.max; } else payload[c.key] = v;
-        }
-        if (bad) toast(`${bad} corregido al máximo`, false);
-        const { error } = await supabase.from('scores').upsert(payload, { onConflict: 'team_id,judge_name' });
-        if (error) { toast(error.message, false); return; }
-        toast('Calificación guardada');
-        await fetchAll();
-        navigate();
-      });
-    });
   }
 
   // Bloque oculto que solo se imprime (ver @media print en admin.html).
-  function printSummary(equipos, cobrado, porCobrar, pctCobro, ranking) {
+  function printSummary(equipos, cobrado, porCobrar, pctCobro) {
+    const saldo = pendingByTeam();
+    const deudores = state.teams.map(t => ({ t, amount: saldo[t.id] || 0 })).filter(d => d.amount > 0).sort((a, b) => b.amount - a.amount);
     const programacion = equipos.filter(t => t.scheduled_time)
       .sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time));
     return `<div id="print-view" class="hidden">
@@ -1588,14 +1498,9 @@ function renderReports(container) {
           <td>${esc(t.contact_name || '')} ${esc(t.contact_phone || '')}</td>
         </tr>`).join('') || '<tr><td colspan="6">Sin programación asignada</td></tr>'}
       </tbody></table>
-      ${ranking.length ? `<h2>Resultados</h2>
-      <table><thead><tr><th>#</th><th>Equipo</th><th>Promedio</th><th>Jueces</th></tr></thead><tbody>
-        ${ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.team.name)}</td><td>${r.avg.toFixed(1)}</td><td>${r.jueces}</td></tr>`).join('')}
-      </tbody></table>` : ''}
-      <h2>Equipos por cobrar (${state.teams.filter(t => (pendingByTeam()[t.id] || 0) > 0).length})</h2>
+      <h2>Equipos por cobrar (${deudores.length})</h2>
       <table><thead><tr><th>Equipo</th><th>Saldo</th><th>Teléfono</th><th>Contacto</th></tr></thead><tbody>
-        ${state.teams.map(t => ({ t, amount: pendingByTeam()[t.id] || 0 })).filter(d => d.amount > 0)
-          .sort((a, b) => b.amount - a.amount)
+        ${deudores
           .map(d => `<tr><td>${esc(d.t.name)}</td><td>$${formatAmount(d.amount)}</td><td>${esc(d.t.contact_phone || '')}</td><td>${esc(d.t.contact_name || '')}</td></tr>`).join('')
           || '<tr><td colspan="4">Sin saldos pendientes</td></tr>'}
       </tbody></table>
@@ -1792,7 +1697,6 @@ function openDancerModal(teamId, dancer = null) {
         case 'export-debtors': exportCSV('debtors'); break;
         case 'export-schedule': exportCSV('schedule'); break;
         case 'export-logistics': exportCSV('logistics'); break;
-        case 'export-scores': exportCSV('scores'); break;
         case 'add-comm': { const msg = prompt('Nota de comunicación:'); if (msg) { await createCommLog({ team_id: teamId, channel: 'in_person', direction: 'outbound', subject: 'Nota manual', message: msg }); delete state.teamData[teamId]; navigate(); toast('Nota registrada'); } break; }
         case 'import-teams': openImportModal('teams'); break;
         case 'import-dancers': openImportModal('dancers'); break;
@@ -2168,25 +2072,9 @@ function openDancerModal(teamId, dancer = null) {
       downloadCSV('logistica', ['Equipo', 'Logo', 'Música', 'Participantes', 'Modalidad', 'Categoría edad', 'Contacto', 'Horario', 'Pendientes'],
         teams.map(t => { const c = C(t); return [t.name, ...c.map(x => x.ok ? 'OK' : 'FALTA'), c.filter(x => !x.ok).map(x => x.label).join(' / ') || '—']; }));
 
-    } else if (type === 'scores') {
-      downloadCSV('resultados', ['Puesto', 'Equipo', ...SCORE_CRITERIA.map(c => `${c.label} (${c.max})`), 'Total', 'Jueces'],
-        rankingForExport());
     } else {
       toast('Export desconocido', false);
     }
-  }
-
-  function rankingForExport() {
-    const porEquipo = {};
-    for (const s of state.scores) (porEquipo[s.team_id] ||= []).push(s);
-    return Object.entries(porEquipo).map(([tid, ss]) => ({ team: state.teams.find(t => t.id === tid), ss }))
-      .filter(r => r.team)
-      .map(r => {
-        const avg = k => r.ss.reduce((a, s) => a + (Number(s[k]) || 0), 0) / r.ss.length;
-        return { name: r.team.name, ss: r.ss.length, vals: SCORE_CRITERIA.map(c => avg(c.key).toFixed(1)), total: (r.ss.reduce((a, s) => a + scoreTotal(s), 0) / r.ss.length).toFixed(1) };
-      })
-      .sort((a, b) => Number(b.total) - Number(a.total))
-      .map((r, i) => [i + 1, r.name, ...r.vals, r.total, r.ss]);
   }
 
   // ============================================================
