@@ -102,8 +102,8 @@
     const dancers = state.dancersByTeam[team.id] || [];
     const cat = catById(team.category_id);
     return [
-      { ok: !!(team.logo_url || team.logo_path), label: 'Logo', value: team.logo_url || team.logo_path || 'FALTA' },
-      { ok: !!(team.music_url || team.music_path), label: 'Música', value: team.music_url || team.music_path || 'FALTA' },
+      { ok: !!(team.logo_url || team.logo_path), label: 'Logo', value: (team.logo_url || team.logo_path) ? 'Listo' : 'FALTA' },
+      { ok: !!(team.music_url || team.music_path), label: 'Música', value: (team.music_url || team.music_path) ? 'Listo' : 'FALTA' },
       { ok: dancers.length > 0, label: 'Participantes', value: dancers.length ? `${dancers.length} — ${dancers.map(d => d.full_name).join(', ')}` : 'FALTA' },
       { ok: !!cat, label: 'Modalidad', value: cat?.name || 'FALTA' },
       { ok: !!team.age_category, label: 'Categoría edad', value: team.age_category || 'FALTA' },
@@ -645,12 +645,8 @@ async function fetchAll() {
            </button>
            <button data-action="import-teams" class="inline-flex items-center gap-2 bg-brand-dark-elevated border border-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:border-brand-lime/40 hover:text-brand-lime transition-colors">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-             Importar CSV
-           </button>
-<button data-action="view-calendar" class="inline-flex items-center gap-2 bg-brand-dark-elevated border border-brand-white-faint text-brand-white px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:border-brand-lime/40 hover:text-brand-lime transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-             Calendario
-           </button>
+              Importar CSV
+            </button>
         </div>
       </div>
       
@@ -1031,18 +1027,18 @@ async function fetchAll() {
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           ${docs.map(d => `
             <div class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-4 flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg bg-brand-white-faint flex items-center justify-center text-brand-white-muted/60 flex-shrink-0">
-                ${d.type === 'logo' ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/></svg>' : d.type === 'music' ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/></svg>' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>'}
+              <div class="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 ${d.type === 'logo' ? 'bg-white p-1' : 'bg-brand-white-faint text-brand-white/70'}">
+                ${d.type === 'logo' ? `<img src="${esc(d.file_url)}" alt="" class="w-full h-full object-contain">` : d.type === 'music' ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/></svg>' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>'}
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-brand-white truncate">${esc(d.name)}</p>
-                <p class="text-[10px] text-brand-white-muted/60">${formatBytes(d.file_size || 0)}</p>
+                <p class="text-[10px] text-brand-white-muted/60">${d.file_size ? formatBytes(d.file_size) : d.type === 'logo' ? 'Imagen' : 'Audio'}</p>
               </div>
               <div class="flex gap-1">
-                  <a href="${esc(d.file_url)}" target="_blank" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Descargar" aria-label="Descargar archivo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg></a>
-                  <button data-action="share-doc" data-id="${d.id}" data-team="${team.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Compartir enlace"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
-                  <button data-action="preview-doc" data-id="${d.id}" data-team="${team.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-brand-lime transition-colors" title="Vista previa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                  <button data-action="delete-doc" data-id="${d.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white-muted/50 hover:text-red-400 transition-colors" title="Eliminar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                  <a href="${esc(d.file_url)}" target="_blank" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white/60 hover:text-brand-lime transition-colors" title="Descargar" aria-label="Descargar archivo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg></a>
+                  <button data-action="share-doc" data-id="${d.id}" data-team="${team.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white/60 hover:text-brand-lime transition-colors" title="Compartir enlace"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+                  <button data-action="preview-doc" data-id="${d.id}" data-team="${team.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white/60 hover:text-brand-lime transition-colors" title="Vista previa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  <button data-action="delete-doc" data-id="${d.id}" class="p-2 min-w-[48px] min-h-[48px] rounded-lg text-brand-white/60 hover:text-red-400 transition-colors" title="Eliminar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
               </div>
             </div>`).join('')}
         </div>`}`;
@@ -1533,7 +1529,7 @@ function renderReports(container) {
          m.removeEventListener('keydown', trapTab);
        });
      }
-     ['team', 'dancer', 'payment', 'delete', 'import', 'calendar', 'preview', 'category', 'admin'].forEach(n => {
+      ['team', 'dancer', 'payment', 'delete', 'import', 'preview', 'category', 'admin'].forEach(n => {
        $(n + '-modal').classList.toggle('hidden', n !== name);
      });
      if (!name && _previousActive) { _previousActive.focus(); _previousActive = null; }
@@ -1646,7 +1642,7 @@ function openDancerModal(teamId, dancer = null) {
   // ============================================================
    document.addEventListener('keydown', (e) => {
      if (e.key === 'Escape') {
-       const openModalNames = ['team', 'dancer', 'payment', 'delete', 'import', 'calendar', 'preview', 'category', 'admin'];
+        const openModalNames = ['team', 'dancer', 'payment', 'delete', 'import', 'preview', 'category', 'admin'];
        const isAnyOpen = openModalNames.some(n => !$(n + '-modal').classList.contains('hidden'));
        if (isAnyOpen) openModal(null);
      }
@@ -1707,7 +1703,6 @@ function openDancerModal(teamId, dancer = null) {
         case 'add-comm': { const msg = prompt('Nota de comunicación:'); if (msg) { await createCommLog({ team_id: teamId, channel: 'in_person', direction: 'outbound', subject: 'Nota manual', message: msg }); delete state.teamData[teamId]; navigate(); toast('Nota registrada'); } break; }
         case 'import-teams': openImportModal('teams'); break;
         case 'import-dancers': openImportModal('dancers'); break;
-        case 'view-calendar': openCalendarModal(); break;
         case 'preview-doc': { const doc = state.teamData[teamId]?.documents?.find(d => d.id === id); if (doc) previewDocument(doc); break; }
         case 'share-doc': { const doc = state.teamData[teamId]?.documents?.find(d => d.id === id); if (doc) { await navigator.clipboard.writeText(doc.file_url); toast('Enlace copiado al portapapeles'); } break; }
         case 'reset-admin-password': openDeleteModal('Resetear contraseña', 'Se generará una contraseña temporal para este administrador.', async () => { await resetAdminPassword(id); openModal(null); toast('Contraseña reseteada'); }); break;
@@ -2345,74 +2340,6 @@ function openCarouselModal(img = null) {
       toast('Error en importación', false);
     }
   });
-
-  // ============================================================
-  // CALENDAR VIEW
-  // ============================================================
-  function openCalendarModal() {
-    openModal('calendar');
-    $('calendar-grid').innerHTML = '';
-    $('calendar-list').innerHTML = '';
-    renderCalendar();
-  }
-
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('#calendar-prev')) { calendarMonthOffset--; renderCalendar(); }
-    if (e.target.closest('#calendar-next')) { calendarMonthOffset++; renderCalendar(); }
-  });
-
-  let calendarMonthOffset = 0;
-
-  function renderCalendar() {
-    const grid = $('calendar-grid');
-    const list = $('calendar-list');
-    const label = $('calendar-month-label');
-    if (!grid || !list) return;
-
-    const now = new Date();
-    const base = new Date(now.getFullYear(), now.getMonth() + calendarMonthOffset, 1);
-    const year = base.getFullYear();
-    const month = base.getMonth();
-    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    if (label) label.textContent = `${monthNames[month]} ${year}`;
-
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    grid.innerHTML = days.map(d => `<div class="font-extrabold text-brand-white-muted/60 py-2">${d}</div>`).join('');
-    for (let i = 0; i < firstDay; i++) {
-      grid.innerHTML += '<div class="p-2"></div>';
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const dayTeams = state.teams.filter(t => {
-        if (!t.scheduled_time) return false;
-         const dt = new Date(t.scheduled_time);
-         return dt.getFullYear() === year && dt.getMonth() === month && dt.getDate() === d;
-      });
-      const hasSchedule = dayTeams.length > 0;
-      const isToday = calendarMonthOffset === 0 && d === now.getDate();
-      grid.innerHTML += `<div class="p-2 min-w-[44px] min-h-[44px] rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center ${hasSchedule ? 'bg-brand-lime/15 text-brand-lime font-bold' : 'text-brand-white-muted/50 hover:bg-brand-white-faint'} ${isToday ? 'ring-1 ring-brand-lime/50' : ''}">${d}${hasSchedule ? `<span class="block text-[9px] font-bold">${dayTeams.length}</span>` : ''}</div>`;
-    }
-
-    const today = new Date();
-    const todayTeams = state.teams.filter(t => {
-      if (!t.scheduled_time) return false;
-      const d = new Date(t.scheduled_time);
-      return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
-    });
-    list.innerHTML = todayTeams.length
-      ? todayTeams.map(t => `
-          <div class="bg-brand-dark-elevated/50 rounded-xl border border-brand-white-faint p-3 flex items-center justify-between">
-            <div>
-              <p class="text-sm font-bold text-brand-white">${esc(t.name)}</p>
-              <p class="text-[10px] text-brand-white-muted/60">${t.scheduled_time ? new Date(t.scheduled_time).toLocaleString('es-MX') : '—'}</p>
-            </div>
-            <span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 bg-brand-lime/10 text-brand-lime">${STATUS_LABELS[t.status]?.label || t.status}</span>
-          </div>`).join('')
-      : '<p class="text-brand-white-muted/50 text-sm text-center py-4">Sin presentaciones hoy</p>';
-  }
 
   // ============================================================
   // DOCUMENT PREVIEW
