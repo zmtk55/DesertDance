@@ -1476,8 +1476,15 @@ function renderReports(container) {
   function printSummary(equipos, cobrado, porCobrar, pctCobro) {
     const saldo = pendingByTeam();
     const deudores = state.teams.map(t => ({ t, amount: saldo[t.id] || 0 })).filter(d => d.amount > 0).sort((a, b) => b.amount - a.amount);
-    const programacion = equipos.filter(t => t.scheduled_time)
-      .sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time));
+    // Todos los equipos, no solo los programados: si nadie tiene horario todavia,
+    // el listado tiene que Saying "sin programar" en vez de salirse vacio.
+    const programacion = equipos.slice().sort((a, b) => {
+      if (!a.scheduled_time && !b.scheduled_time) return 0;
+      if (!a.scheduled_time) return 1;
+      if (!b.scheduled_time) return -1;
+      return new Date(a.scheduled_time) - new Date(b.scheduled_time);
+    });
+    const sinProgramar = programacion.filter(t => !t.scheduled_time).length;
     return `<div id="print-view" class="hidden">
       <h1>Desert Dance Competition — ${esc(state.eventSettings.event_name || '')}</h1>
       <p>Generado: ${new Date().toLocaleString('es-MX')} · Equipos en el periodo: ${equipos.length}</p>
@@ -1487,16 +1494,16 @@ function renderReports(container) {
         <tr><th>Falta por saldar</th><td>$${formatAmount(porCobrar)}</td></tr>
         <tr><th>Recuperado</th><td>${pctCobro}%</td></tr>
       </tbody></table>
-      <h2>Programación (${programacion.length})</h2>
+      <h2>Programación (${programacion.length - sinProgramar} de ${programacion.length} con horario)</h2>
       <table><thead><tr><th>Fecha y hora</th><th>Equipo</th><th>Modalidad</th><th>Categoría edad</th><th>Participantes</th><th>Contacto</th></tr></thead><tbody>
         ${programacion.map(t => `<tr>
-          <td>${new Date(t.scheduled_time).toLocaleString('es-MX')}</td>
+          <td>${t.scheduled_time ? new Date(t.scheduled_time).toLocaleString('es-MX') : 'SIN PROGRAMAR'}</td>
           <td>${esc(t.name)}</td>
           <td>${esc(catById(t.category_id)?.name || '—')}</td>
           <td>${esc(t.age_category || '—')}</td>
-          <td>${(state.dancersByTeam[t.id] || []).map(d => esc(d.full_name)).join(', ')}</td>
+          <td>${(state.dancersByTeam[t.id] || []).map(d => esc(d.full_name)).join(', ') || '—'}</td>
           <td>${esc(t.contact_name || '')} ${esc(t.contact_phone || '')}</td>
-        </tr>`).join('') || '<tr><td colspan="6">Sin programación asignada</td></tr>'}
+        </tr>`).join('') || '<tr><td colspan="6">Sin equipos en el periodo</td></tr>'}
       </tbody></table>
       <h2>Equipos por cobrar (${deudores.length})</h2>
       <table><thead><tr><th>Equipo</th><th>Saldo</th><th>Teléfono</th><th>Contacto</th></tr></thead><tbody>
@@ -2063,9 +2070,20 @@ function openDancerModal(teamId, dancer = null) {
         rows.map(d => [d.t.name, d.amount, d.t.contact_phone || '', d.t.contact_phone ? `https://wa.me/52${d.t.contact_phone.replace(/\D/g, '')}` : '', d.t.contact_name || '', d.t.contact_email || '', d.t.origin_city || '']));
 
     } else if (type === 'schedule') {
+      // Todos los equipos, programados primero; los demas salen como SIN PROGRAMAR
+      // para que el listado sirva como control de quienes falta por agendar.
+      const orden = teams.slice().sort((a, b) => {
+        if (!a.scheduled_time && !b.scheduled_time) return 0;
+        if (!a.scheduled_time) return 1;
+        if (!b.scheduled_time) return -1;
+        return new Date(a.scheduled_time) - new Date(b.scheduled_time);
+      });
       downloadCSV('programacion', ['Fecha', 'Hora', 'Equipo', 'Modalidad', 'Categoría edad', 'Bailarines', 'Nivel', 'Contacto', 'Teléfono'],
-        teams.filter(t => t.scheduled_time).sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time))
-          .map(t => { const d = new Date(t.scheduled_time); return [d.toLocaleDateString('es-MX'), d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }), t.name, catById(t.category_id)?.name || '', t.age_category || '', (state.dancersByTeam[t.id] || []).length, t.modalidad || '', t.contact_name || '', t.contact_phone || '']; }));
+        orden.map(t => {
+          const d = t.scheduled_time ? new Date(t.scheduled_time) : null;
+          return [d ? d.toLocaleDateString('es-MX') : 'SIN PROGRAMAR', d ? d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '',
+            t.name, catById(t.category_id)?.name || '', t.age_category || '', (state.dancersByTeam[t.id] || []).length, t.modalidad || '', t.contact_name || '', t.contact_phone || ''];
+        }));
 
     } else if (type === 'logistics') {
       const C = teamChecks;
