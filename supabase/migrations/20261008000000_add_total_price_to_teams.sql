@@ -8,8 +8,10 @@
 --   ALTER TABLE public.teams ADD COLUMN modalidad TEXT DEFAULT 'medio';
 -- Ponytail: columnas simples, sin triggers ni índices; agregar índices si se usan para reportes.
 
+-- IF NOT EXISTS: total_price ya venia de una migracion anterior; sin esto el script
+-- abortaba en la primera sentencia y `modalidad` nunca se creaba (registro roto).
 ALTER TABLE public.teams
-ADD COLUMN total_price NUMERIC(10,2) DEFAULT 0;
+ADD COLUMN IF NOT EXISTS total_price NUMERIC(10,2) DEFAULT 0;
 
 ALTER TABLE public.teams
-ADD COLUMN modalidad TEXT DEFAULT 'medio';
+ADD COLUMN IF NOT EXISTS modalidad TEXT DEFAULT 'medio';
