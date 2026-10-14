@@ -37,6 +37,9 @@
     dancersByTeam: {},
     teamData: {},
     payments: [],
+    scores: [],
+    reportRange: { from: '', to: '' },
+    auditFilters: { q: '', action: '' },
     categories: [],
     carousel: [],
     eventLogo: null,
@@ -79,6 +82,71 @@
     return bytes + ' B';
   }
 
+  // Criterios del sistema de 100 puntos descrito en puntos.html.
+  const SCORE_CRITERIA = [
+    { key: 'tecnica', label: 'Técnica', max: 25 },
+    { key: 'ejecucion', label: 'Ejecución', max: 15 },
+    { key: 'musicalidad', label: 'Musicalidad', max: 10 },
+    { key: 'interpretacion', label: 'Interpretación', max: 10 },
+    { key: 'creatividad', label: 'Creatividad', max: 10 },
+    { key: 'composicion', label: 'Composición', max: 15 },
+    { key: 'espacio', label: 'Espacio', max: 5 },
+    { key: 'presencia', label: 'Presencia', max: 10 },
+  ];
+
+  const scoreTotal = (s) => SCORE_CRITERIA.reduce((a, c) => a + (Number(s[c.key]) || 0), 0);
+
+  // Saldo pendiente por equipo: todo pago que no está completado ni reembolsado.
+  function pendingByTeam() {
+    const map = {};
+    for (const p of state.payments) {
+      if (['completed', 'refunded'].includes(p.status)) continue;
+      map[p.team_id] = (map[p.team_id] || 0) + Number(p.amount || 0);
+    }
+    return map;
+  }
+
+  // Verificaciones de logística de un equipo. Compartido por el tab Calendario
+  // y por el export de logística.
+  function teamChecks(team) {
+    const dancers = state.dancersByTeam[team.id] || [];
+    const cat = catById(team.category_id);
+    return [
+      { ok: !!(team.logo_url || team.logo_path), label: 'Logo', value: team.logo_url || team.logo_path || 'FALTA' },
+      { ok: !!(team.music_url || team.music_path), label: 'Música', value: team.music_url || team.music_path || 'FALTA' },
+      { ok: dancers.length > 0, label: 'Participantes', value: dancers.length ? `${dancers.length} — ${dancers.map(d => d.full_name).join(', ')}` : 'FALTA' },
+      { ok: !!cat, label: 'Modalidad', value: cat?.name || 'FALTA' },
+      { ok: !!team.age_category, label: 'Categoría edad', value: team.age_category || 'FALTA' },
+      { ok: !!(team.contact_name && team.contact_phone), label: 'Contacto', value: team.contact_phone ? `${team.contact_name || ''} · ${team.contact_phone}`.trim() : 'FALTA' },
+      { ok: !!team.scheduled_time, label: 'Horario', value: team.scheduled_time ? new Date(team.scheduled_time).toLocaleString('es-MX') : 'FALTA' },
+    ];
+  }
+
+  // Rango de fechas de Reportes. Vacío = sin filtro.
+  function inReportRange(value) {
+    const { from, to } = state.reportRange;
+    if (!from && !to) return true;
+    if (!value) return false;
+    const d = new Date(value);
+    if (isNaN(d)) return true;
+    const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (from && day < from) return false;
+    if (to && day > to) return false;
+    return true;
+  }
+
+  function downloadCSV(name, headers, rows) {
+    if (!rows.length) { toast('Sin datos para exportar', false); return; }
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `desert-dance-${name}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('CSV exportado');
+  }
+
   function toast(msg, ok = true, duration = 3000) {
     const t = $('toast');
     t.textContent = msg;
@@ -101,6 +169,7 @@
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return null; }
     $('admin-email').textContent = session.user.email;
+    state.judgeName = session.user.email;
     return session;
   }
 
@@ -108,20 +177,22 @@
   // DATA FETCHING
   // ============================================================
 async function fetchAll() {
-    const [teams, categories, settings, admins, carousel, eventLogo, auditLog, payments] = await Promise.all([
+    const [teams, categories, settings, admins, carousel, eventLogo, auditLog, payments, scores] = await Promise.all([
       supabase.from('teams').select('*, participants(id, team_id, full_name, genre, modality_level, routine_title, category_id, email, school_name, status)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('event_settings').select('*'),
       supabase.from('admin_users').select('*'),
       supabase.from('carousel_images').select('*').order('sort_order', { ascending: true }),
       supabase.from('event_assets').select('*').eq('key', 'event_logo').maybeSingle(),
-      supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(100),
-      supabase.from('payments').select('id, team_id, amount, status'),
+      supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(500),
+      supabase.from('payments').select('*'),
+      supabase.from('scores').select('*'),
     ]);
 
     if (teams.error) throw teams.error;
     state.teams = teams.data || [];
     state.payments = payments.data || [];
+    state.scores = scores.data || [];
 
     state.categories = (categories.data || []).sort((a, b) => a.sort_order - b.sort_order);
 
@@ -434,12 +505,7 @@ async function fetchAll() {
     const count = (s) => state.teams.filter(t => t.status === s).length;
     const totalDancers = Object.values(state.dancersByTeam).reduce((a, d) => a + d.length, 0);
 
-    // Saldo pendiente por equipo: todo lo que no está completado ni reembolsado.
-    const saldo = {};
-    for (const p of state.payments) {
-      if (['completed', 'refunded'].includes(p.status)) continue;
-      saldo[p.team_id] = (saldo[p.team_id] || 0) + Number(p.amount || 0);
-    }
+    const saldo = pendingByTeam();
     const deudas = state.teams
       .map(t => ({ t, amount: saldo[t.id] || 0 }))
       .filter(d => d.amount > 0)
@@ -998,17 +1064,7 @@ async function fetchAll() {
   // -- Tab: Calendar --
   function renderCalendarTab(team, container) {
     const sched = team.scheduled_time ? new Date(team.scheduled_time) : null;
-    const dancers = state.dancersByTeam[team.id] || [];
-    const cat = catById(team.category_id);
-    const checks = [
-      { ok: !!(team.logo_url || team.logo_path), label: 'Logo del equipo', hint: team.logo_url || team.logo_path || 'Sin logo' },
-      { ok: !!(team.music_url || team.music_path), label: 'Música (MP3)', hint: team.music_url || team.music_path || 'Sin audio' },
-      { ok: dancers.length > 0, label: 'Participantes', hint: dancers.length ? `${dancers.length} — ${dancers.map(d => d.full_name).join(', ')}` : 'Sin participantes' },
-      { ok: !!cat, label: 'Modalidad', hint: cat?.name || 'Sin modalidad' },
-      { ok: !!team.age_category, label: 'Categoría de edad', hint: team.age_category || 'Sin definir' },
-      { ok: !!(team.contact_name && team.contact_phone), label: 'Contacto', hint: team.contact_phone ? `${team.contact_name || ''} · ${team.contact_phone}`.trim() : 'Sin teléfono' },
-      { ok: !!sched, label: 'Horario de presentación', hint: sched ? sched.toLocaleString('es-MX') : 'Sin programar' },
-    ];
+    const checks = teamChecks(team);
     const ready = checks.filter(c => c.ok).length;
     container.innerHTML = `
       <div class="grid md:grid-cols-2 gap-6">
@@ -1053,7 +1109,7 @@ async function fetchAll() {
                 </span>
                 <span class="min-w-0">
                   <span class="block text-sm ${c.ok ? 'text-brand-white' : 'text-brand-warn'}">${esc(c.label)}</span>
-                  <span class="block text-[11px] text-brand-white-muted/60 break-words">${esc(c.hint)}</span>
+                  <span class="block text-[11px] text-brand-white-muted/60 break-words">${esc(c.value)}</span>
                 </span>
               </li>`).join('')}
           </ul>
@@ -1259,44 +1315,292 @@ async function fetchAll() {
   // ============================================================
   // RENDER: REPORTS
   // ============================================================
-   function renderReports(container) {
-     container.innerHTML = `
-       <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white mb-6">Reportes</h2>
-       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-         <button data-action="export-teams" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
-           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-           <p class="font-bold text-brand-white text-sm mb-0.5">Exportar equipos</p>
-           <p class="text-[10px] text-brand-white-muted/60">CSV con todos los equipos</p>
-         </button>
-         <button data-action="export-dancers" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
-           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
-           <p class="font-bold text-brand-white text-sm mb-0.5">Exportar bailarines</p>
-           <p class="text-[10px] text-brand-white-muted/60">CSV con participantes</p>
-         </button>
-         <button data-action="export-payments" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 text-left hover:border-brand-lime/30 transition-colors">
-           <div class="w-10 h-10 rounded-lg bg-brand-lime/10 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d8e723" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-           <p class="font-bold text-brand-white text-sm mb-0.5">Exportar pagos</p>
-           <p class="text-[10px] text-brand-white-muted/60">CSV con transacciones</p>
-         </button>
-       </div>
-       <h3 class="font-title text-lg font-black text-brand-white mb-4">Log de auditoría</h3>
-       <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
-         <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
-           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Fecha</th>
-           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Admin</th>
-           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Acción</th>
-           <th class="px-5 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Entidad</th>
-         </tr></thead><tbody>
-           ${(state.auditLog || []).map(a => `
-             <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
-               <td class="px-5 py-3 text-brand-white-muted/70 text-xs">${new Date(a.created_at).toLocaleString('es-MX')}</td>
-               <td class="px-5 py-3 text-brand-white text-xs">${esc(a.details?.email || '—')}</td>
-               <td class="px-5 py-3"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 bg-brand-lime/10 text-brand-lime">${esc(a.action)}</span></td>
-               <td class="px-5 py-3 text-brand-white-muted/70 text-xs">${esc(a.entity_type)} ${a.entity_id || ''}</td>
-             </tr>`).join('') || '<tr><td colspan="4" class="px-5 py-8 text-center text-brand-white-muted/50 text-sm">Sin actividad reciente</td></tr>'}
-         </tbody></table>
-       </div>`;
-   }
+function renderReports(container) {
+      const saldo = pendingByTeam();
+      const equipos = state.teams.filter(t => inReportRange(t.created_at));
+      const bailarines = equipos.reduce((a, t) => a + (state.dancersByTeam[t.id] || []).length, 0);
+      const pagos = state.payments.filter(p => inReportRange(p.paid_date || p.created_at));
+      const cobrado = pagos.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount || 0), 0);
+      const porCobrar = state.payments.filter(p => !['completed', 'refunded'].includes(p.status)).reduce((s, p) => s + Number(p.amount || 0), 0);
+      const facturado = cobrado + porCobrar;
+      const pctCobro = facturado ? Math.round(cobrado / facturado * 100) : 0;
+
+      // Recaudación por modalidad (equipos del periodo).
+      const porModalidad = state.categories.map(c => {
+        const ids = new Set(equipos.filter(t => t.category_id === c.id).map(t => t.id));
+        const ps = state.payments.filter(p => ids.has(p.team_id));
+        return {
+          cat: c,
+          cobrado: ps.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount || 0), 0),
+          saldo: ps.filter(p => !['completed', 'refunded'].includes(p.status)).reduce((s, p) => s + Number(p.amount || 0), 0),
+          equipos: ids.size,
+        };
+      }).filter(m => m.equipos > 0 || m.cobrado > 0 || m.saldo > 0);
+      const maxMod = Math.max(1, ...porModalidad.map(m => m.cobrado + m.saldo));
+
+      // Ranking: promedio de los jueces por equipo.
+      const porEquipo = {};
+      for (const s of state.scores) (porEquipo[s.team_id] ||= []).push(s);
+      const ranking = Object.entries(porEquipo).map(([tid, ss]) => ({
+        team: state.teams.find(t => t.id === tid),
+        avg: ss.reduce((a, s) => a + scoreTotal(s), 0) / ss.length,
+        jueces: ss.length,
+      })).filter(r => r.team).sort((a, b) => b.avg - a.avg);
+
+      const EXPORTS = [
+        ['export-teams', 'Equipos', 'Inscripciones con categoría y estatus'],
+        ['export-dancers', 'Bailarines', 'Participantes por equipo'],
+        ['export-payments', 'Pagos', 'Transacciones del periodo'],
+        ['export-debtors', 'Deudores', 'Saldo y teléfono para cobrar'],
+        ['export-schedule', 'Programación', 'Orden de presentación'],
+        ['export-logistics', 'Logística', 'Logo, mp3 y checklist'],
+        ['export-scores', 'Resultados', 'Calificación y ranking'],
+      ];
+
+      const auditRows = (state.auditLog || []).filter(a => {
+        if (!inReportRange(a.created_at)) return false;
+        if (state.auditFilters.action && a.action !== state.auditFilters.action) return false;
+        if (state.auditFilters.q) {
+          const q = state.auditFilters.q.toLowerCase();
+          const hay = `${a.action} ${a.entity_type} ${a.details?.email || ''} ${adminEmail(a.admin_id)}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+      const auditActions = [...new Set((state.auditLog || []).map(a => a.action))].sort();
+
+      container.innerHTML = `
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 no-print">
+          <div>
+            <h2 class="font-title text-2xl md:text-3xl font-black text-brand-white">Reportes</h2>
+            <p class="text-brand-white-muted/60 text-xs mt-1">${state.reportRange.from || state.reportRange.to ? `Periodo ${state.reportRange.from || 'inicio'} → ${state.reportRange.to || 'hoy'}` : 'Todo el histórico'}</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-2">
+            <div>
+              <label class="block text-[10px] text-brand-white-muted/60 uppercase font-extrabold mb-1">Desde</label>
+              <input id="rep-from" type="date" value="${state.reportRange.from}" class="bg-brand-dark/50 border border-brand-white-faint rounded-xl px-3 py-2 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40">
+            </div>
+            <div>
+              <label class="block text-[10px] text-brand-white-muted/60 uppercase font-extrabold mb-1">Hasta</label>
+              <input id="rep-to" type="date" value="${state.reportRange.to}" class="bg-brand-dark/50 border border-brand-white-faint rounded-xl px-3 py-2 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40">
+            </div>
+            <button id="rep-clear" class="border border-brand-white-faint text-brand-white-muted/70 font-bold text-xs px-4 py-2.5 rounded-xl hover:text-brand-white transition-colors">Limpiar</button>
+            <button id="rep-print" class="inline-flex items-center gap-2 bg-brand-lime text-brand-dark px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-[0.1em] hover:bg-brand-lime-hover transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
+              Resumen PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 no-print">
+          ${stat('Equipos', equipos.length, '#fff')}
+          ${stat('Bailarines', bailarines, '#fff')}
+          ${stat('Confirmados', state.teams.filter(t => t.status === 'confirmed').length, '#d8e723')}
+          ${stat('Por confirmar', state.teams.filter(t => t.status === 'pending').length, '#f0a92e')}
+          ${stat('Cobrado', '$' + formatAmount(cobrado), '#d8e723')}
+          ${stat('Falta por saldar', '$' + formatAmount(porCobrar), '#f0a92e')}
+          ${stat('% recuperado', pctCobro + '%', pctCobro >= 80 ? '#d8e723' : '#f0a92e')}
+          ${stat('Equipos con saldo', Object.keys(saldo).length, '#f0a92e')}
+        </div>
+
+        ${porModalidad.length ? `
+        <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-5 mb-8 no-print">
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-4">Recaudación por modalidad</p>
+          <div class="space-y-3">
+            ${porModalidad.map(m => {
+              const tot = m.cobrado + m.saldo;
+              return `<div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-brand-white font-medium">${esc(m.cat.name)} <span class="text-brand-white-muted/50">· ${m.equipos} ${m.equipos === 1 ? 'equipo' : 'equipos'}</span></span>
+                  <span class="text-brand-white-muted/70">$${formatAmount(m.cobrado)} <span class="text-brand-white-muted/40">de ${formatAmount(tot)}</span></span>
+                </div>
+                <div class="h-2 rounded-full bg-brand-white-faint/40 overflow-hidden flex">
+                  <div style="width:${tot ? (m.cobrado / tot * 100) : 0}%;background:#d8e723"></div>
+                  <div style="width:${tot ? (m.saldo / tot * 100) : 0}%;background:#f0a92e"></div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+          <p class="text-[10px] text-brand-white-muted/40 mt-3"><span class="text-brand-lime">■</span> cobrado &nbsp; <span class="text-brand-warn">■</span> pendiente</p>
+        </div>` : ''}
+
+        <h3 class="font-title text-lg font-black text-brand-white mb-4 no-print">Exportaciones</h3>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 no-print">
+          ${EXPORTS.map(([act, title, sub]) => `
+            <button data-action="${act}" class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint p-4 text-left hover:border-brand-lime/30 transition-colors">
+              <p class="font-bold text-brand-white text-sm mb-0.5">${title}</p>
+              <p class="text-[10px] text-brand-white-muted/60">${sub}</p>
+            </button>`).join('')}
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6 mb-8 no-print">
+          <div>
+            <h3 class="font-title text-lg font-black text-brand-white mb-1">Resultados</h3>
+            <p class="text-[10px] text-brand-white-muted/60 mb-4">Captura del juez ${esc(state.judgeName || '')} · 100 pts en ${SCORE_CRITERIA.length} criterios</p>
+            ${ranking.length ? `
+            <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden mb-4">
+              <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">#</th>
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Equipo</th>
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-right">Promedio</th>
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-right">Jueces</th>
+              </tr></thead><tbody>
+                ${ranking.map((r, i) => `
+                  <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
+                    <td class="px-4 py-2.5 font-title font-black ${i < 3 ? 'text-brand-lime' : 'text-brand-white-muted/40'}">${i + 1}</td>
+                    <td class="px-4 py-2.5 text-brand-white font-medium">${esc(r.team.name)}</td>
+                    <td class="px-4 py-2.5 font-title font-bold text-brand-white text-right">${r.avg.toFixed(1)}</td>
+                    <td class="px-4 py-2.5 text-brand-white-muted/60 text-xs text-right">${r.jueces}</td>
+                  </tr>`).join('')}
+              </tbody></table>
+            </div>` : '<p class="text-brand-white-muted/50 text-sm mb-4">Sin calificación capturada todavía.</p>'}
+            <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-x-auto">
+              <table class="w-full text-xs"><thead><tr class="border-b border-brand-white-faint text-left">
+                <th class="px-3 py-2.5 text-[10px] text-brand-white-muted/60 uppercase font-extrabold sticky left-0 bg-brand-dark-elevated">Equipo</th>
+                ${SCORE_CRITERIA.map(c => `<th class="px-2 py-2.5 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-center" title="máx ${c.max}">${c.label.slice(0, 4)}<span class="text-brand-white-muted/30">/${c.max}</span></th>`).join('')}
+                <th class="px-3 py-2.5 text-[10px] text-brand-white-muted/60 uppercase font-extrabold text-center">Total</th>
+                <th class="px-3 py-2.5"></th>
+              </tr></thead><tbody>
+                ${equipos.map(t => {
+                  const mine = state.scores.find(s => s.team_id === t.id && s.judge_name === state.judgeName) || {};
+                  return `<tr class="border-b border-brand-white-faint/40">
+                    <td class="px-3 py-2 text-brand-white font-medium sticky left-0 bg-brand-dark-elevated max-w-[140px] truncate">${esc(t.name)}</td>
+                    ${SCORE_CRITERIA.map(c => `<td class="px-1 py-1.5"><input type="number" min="0" max="${c.max}" step="0.5" data-score="${t.id}" data-crit="${c.key}" value="${mine[c.key] ?? ''}" class="w-full bg-brand-dark/50 border border-brand-white-faint rounded-lg px-1.5 py-1.5 text-center text-brand-white focus:outline-none focus:border-brand-lime/40"></td>`).join('')}
+                    <td class="px-3 py-2 font-title font-bold text-brand-lime text-center" data-total="${t.id}">${mine.tecnica !== undefined ? scoreTotal(mine) : '—'}</td>
+                    <td class="px-3 py-2"><button data-action="save-score" data-id="${t.id}" class="px-3 py-1.5 rounded-lg bg-brand-lime/15 text-brand-lime text-[10px] font-extrabold uppercase tracking-wider hover:bg-brand-lime/25 transition-colors">Guardar</button></td>
+                  </tr>`;
+                }).join('') || '<tr><td colspan="11" class="px-3 py-8 text-center text-brand-white-muted/50">Sin equipos en el periodo</td></tr>'}
+              </tbody></table>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="font-title text-lg font-black text-brand-white mb-4">Log de auditoría</h3>
+            <div class="flex gap-2 mb-4">
+              <input id="audit-q" type="search" value="${esc(state.auditFilters.q)}" placeholder="Buscar admin, acción, entidad…" class="flex-1 bg-brand-dark/50 border border-brand-white-faint rounded-xl px-4 py-2.5 text-sm text-brand-white placeholder:text-brand-white-muted/40 focus:outline-none focus:border-brand-lime/40">
+              <select id="audit-action" class="bg-brand-dark/50 border border-brand-white-faint rounded-xl px-3 py-2.5 text-sm text-brand-white focus:outline-none focus:border-brand-lime/40">
+                <option value="">Todas las acciones</option>
+                ${auditActions.map(a => `<option value="${esc(a)}" ${state.auditFilters.action === a ? 'selected' : ''}>${esc(a)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="bg-brand-dark-elevated/50 rounded-2xl border border-brand-white-faint overflow-hidden">
+              <table class="w-full text-sm"><thead><tr class="border-b border-brand-white-faint text-left">
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Fecha</th>
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Admin</th>
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Acción</th>
+                <th class="px-4 py-3 text-[10px] text-brand-white-muted/60 uppercase font-extrabold">Entidad</th>
+              </tr></thead><tbody>
+                ${auditRows.slice(0, 100).map(a => `
+                  <tr class="border-b border-brand-white-faint/40 hover:bg-brand-white-faint/5">
+                    <td class="px-4 py-2.5 text-brand-white-muted/70 text-xs whitespace-nowrap">${new Date(a.created_at).toLocaleString('es-MX')}</td>
+                    <td class="px-4 py-2.5 text-brand-white text-xs">${esc(adminEmail(a.admin_id) || a.details?.email || '—')}</td>
+                    <td class="px-4 py-2.5"><span class="badge text-[10px] font-bold rounded-full px-2 py-0.5 bg-brand-lime/10 text-brand-lime">${esc(a.action)}</span></td>
+                    <td class="px-4 py-2.5 text-brand-white-muted/70 text-xs">${esc(a.entity_type)}</td>
+                  </tr>`).join('') || '<tr><td colspan="4" class="px-4 py-8 text-center text-brand-white-muted/50 text-sm">Sin actividad que coincida</td></tr>'}
+              </tbody></table>
+            </div>
+            ${auditRows.length > 100 ? `<p class="text-[10px] text-brand-white-muted/40 mt-2">Mostrando 100 de ${auditRows.length} · acota con los filtros para ver el resto</p>` : ''}
+          </div>
+        </div>
+
+        ${printSummary(equipos, cobrado, porCobrar, pctCobro, ranking)}`;
+
+      wireReportEvents(container);
+    }
+
+  const stat = (label, value, color) => `
+        <div class="bg-brand-dark-elevated/70 rounded-2xl p-4 border border-brand-white-faint">
+          <p class="text-[10px] text-brand-white-muted/60 uppercase tracking-[0.15em] font-extrabold mb-1">${label}</p>
+          <p class="font-title text-2xl font-black" style="color:${color}">${value}</p>
+        </div>`;
+
+  function adminEmail(adminId) {
+    return state.adminUsers.find(a => a.id === adminId)?.email || '';
+  }
+
+  function wireReportEvents(container) {
+    const rerender = () => renderReports($('main-content'));
+    container.querySelector('#rep-from')?.addEventListener('change', e => { state.reportRange.from = e.target.value; rerender(); });
+    container.querySelector('#rep-to')?.addEventListener('change', e => { state.reportRange.to = e.target.value; rerender(); });
+    container.querySelector('#rep-clear')?.addEventListener('click', () => { state.reportRange = { from: '', to: '' }; rerender(); });
+    container.querySelector('#rep-print')?.addEventListener('click', () => window.print());
+    const q = container.querySelector('#audit-q');
+    q?.addEventListener('input', e => {
+      state.auditFilters.q = e.target.value;
+      const pos = e.target.selectionStart;
+      rerender();
+      const next = $('audit-q');
+      if (next) { next.focus(); next.setSelectionRange(pos, pos); }
+    });
+    container.querySelector('#audit-action')?.addEventListener('change', e => { state.auditFilters.action = e.target.value; rerender(); });
+
+    container.querySelectorAll('[data-score]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const teamId = inp.dataset.score;
+        let sum = 0;
+        container.querySelectorAll(`[data-score="${teamId}"]`).forEach(i => sum += Number(i.value) || 0);
+        const cell = container.querySelector(`[data-total="${teamId}"]`);
+        if (cell) cell.textContent = sum;
+      });
+    });
+
+    container.querySelectorAll('[data-action="save-score"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const teamId = btn.dataset.id;
+        const payload = { team_id: teamId, judge_name: state.judgeName };
+        let bad = null;
+        for (const c of SCORE_CRITERIA) {
+          const inp = container.querySelector(`[data-score="${teamId}"][data-crit="${c.key}"]`);
+          const v = Number(inp?.value) || 0;
+          if (v > c.max) { bad = `${c.label} (máx ${c.max})`; inp.value = c.max; payload[c.key] = c.max; } else payload[c.key] = v;
+        }
+        if (bad) toast(`${bad} corregido al máximo`, false);
+        const { error } = await supabase.from('scores').upsert(payload, { onConflict: 'team_id,judge_name' });
+        if (error) { toast(error.message, false); return; }
+        toast('Calificación guardada');
+        await fetchAll();
+        navigate();
+      });
+    });
+  }
+
+  // Bloque oculto que solo se imprime (ver @media print en admin.html).
+  function printSummary(equipos, cobrado, porCobrar, pctCobro, ranking) {
+    const programacion = equipos.filter(t => t.scheduled_time)
+      .sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time));
+    return `<div id="print-view" class="hidden">
+      <h1>Desert Dance Competition — ${esc(state.eventSettings.event_name || '')}</h1>
+      <p>Generado: ${new Date().toLocaleString('es-MX')} · Equipos en el periodo: ${equipos.length}</p>
+      <h2>Resumen financiero</h2>
+      <table><tbody>
+        <tr><th>Cobrado</th><td>$${formatAmount(cobrado)}</td></tr>
+        <tr><th>Falta por saldar</th><td>$${formatAmount(porCobrar)}</td></tr>
+        <tr><th>Recuperado</th><td>${pctCobro}%</td></tr>
+      </tbody></table>
+      <h2>Programación (${programacion.length})</h2>
+      <table><thead><tr><th>Fecha y hora</th><th>Equipo</th><th>Modalidad</th><th>Categoría edad</th><th>Participantes</th><th>Contacto</th></tr></thead><tbody>
+        ${programacion.map(t => `<tr>
+          <td>${new Date(t.scheduled_time).toLocaleString('es-MX')}</td>
+          <td>${esc(t.name)}</td>
+          <td>${esc(catById(t.category_id)?.name || '—')}</td>
+          <td>${esc(t.age_category || '—')}</td>
+          <td>${(state.dancersByTeam[t.id] || []).map(d => esc(d.full_name)).join(', ')}</td>
+          <td>${esc(t.contact_name || '')} ${esc(t.contact_phone || '')}</td>
+        </tr>`).join('') || '<tr><td colspan="6">Sin programación asignada</td></tr>'}
+      </tbody></table>
+      ${ranking.length ? `<h2>Resultados</h2>
+      <table><thead><tr><th>#</th><th>Equipo</th><th>Promedio</th><th>Jueces</th></tr></thead><tbody>
+        ${ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.team.name)}</td><td>${r.avg.toFixed(1)}</td><td>${r.jueces}</td></tr>`).join('')}
+      </tbody></table>` : ''}
+      <h2>Equipos por cobrar (${state.teams.filter(t => (pendingByTeam()[t.id] || 0) > 0).length})</h2>
+      <table><thead><tr><th>Equipo</th><th>Saldo</th><th>Teléfono</th><th>Contacto</th></tr></thead><tbody>
+        ${state.teams.map(t => ({ t, amount: pendingByTeam()[t.id] || 0 })).filter(d => d.amount > 0)
+          .sort((a, b) => b.amount - a.amount)
+          .map(d => `<tr><td>${esc(d.t.name)}</td><td>$${formatAmount(d.amount)}</td><td>${esc(d.t.contact_phone || '')}</td><td>${esc(d.t.contact_name || '')}</td></tr>`).join('')
+          || '<tr><td colspan="4">Sin saldos pendientes</td></tr>'}
+      </tbody></table>
+    </div>`;
+  }
 
 // ============================================================
   // MODALS
@@ -1485,6 +1789,10 @@ function openDancerModal(teamId, dancer = null) {
         case 'export-teams': exportCSV('teams'); break;
         case 'export-dancers': exportCSV('dancers'); break;
         case 'export-payments': exportCSV('payments'); break;
+        case 'export-debtors': exportCSV('debtors'); break;
+        case 'export-schedule': exportCSV('schedule'); break;
+        case 'export-logistics': exportCSV('logistics'); break;
+        case 'export-scores': exportCSV('scores'); break;
         case 'add-comm': { const msg = prompt('Nota de comunicación:'); if (msg) { await createCommLog({ team_id: teamId, channel: 'in_person', direction: 'outbound', subject: 'Nota manual', message: msg }); delete state.teamData[teamId]; navigate(); toast('Nota registrada'); } break; }
         case 'import-teams': openImportModal('teams'); break;
         case 'import-dancers': openImportModal('dancers'); break;
@@ -1825,29 +2133,60 @@ function openDancerModal(teamId, dancer = null) {
   // EXPORT CSV
   // ============================================================
   function exportCSV(type) {
-    let headers, rows;
-    
+    const teams = state.teams.filter(t => inReportRange(t.created_at));
+    const teamName = (id) => state.teams.find(t => t.id === id)?.name || '';
+
     if (type === 'teams') {
-      headers = ['Equipo', 'Ciudad', 'Contacto', 'Teléfono', 'Email', 'Categoría', 'Estatus', 'Horario', 'Registro'];
-      rows = state.teams.map(t => [t.name, t.origin_city || '', t.contact_name || '', t.contact_phone || '', t.contact_email || '', t.category || '', STATUS_LABELS[t.status]?.label || t.status, t.scheduled_time || '', t.created_at]);
+      downloadCSV('equipos', ['Equipo', 'Ciudad', 'Contacto', 'Teléfono', 'Email', 'Modalidad', 'Categoría edad', 'Nivel', 'Estatus', 'Horario', 'Bailarines', 'Total precio', 'Registro'],
+        teams.map(t => [t.name, t.origin_city || '', t.contact_name || '', t.contact_phone || '', t.contact_email || '',
+          catById(t.category_id)?.name || '', t.age_category || '', t.modalidad || '',
+          STATUS_LABELS[t.status]?.label || t.status, t.scheduled_time || '',
+          (state.dancersByTeam[t.id] || []).length, t.total_price ?? '', t.created_at]));
+
     } else if (type === 'dancers') {
-      headers = ['Equipo', 'Nombre', 'Género', 'Modalidad', 'Rutina'];
-      rows = state.teams.flatMap(t => (state.dancersByTeam[t.id] || []).map(d => [t.name, d.full_name, d.genre || '', d.modality_level || '', d.routine_title || '']));
+      downloadCSV('bailarines', ['Equipo', 'Nombre', 'Género', 'Nivel', 'Rutina', 'Email', 'Estatus'],
+        teams.flatMap(t => (state.dancersByTeam[t.id] || []).map(d => [t.name, d.full_name, d.genre || '', d.modality_level || '', d.routine_title || '', d.email || '', d.status || ''])));
+
     } else if (type === 'payments') {
-      headers = ['Equipo', 'Concepto', 'Monto', 'Estado', 'Vencimiento', 'Pago', 'Método', 'Referencia'];
-      rows = Object.entries(state.teamData).flatMap(([tid, td]) => (td.payments?.all || []).map(p => [state.teams.find(t => t.id === tid)?.name || '', p.concept, p.amount, PAYMENT_STATUS[p.status]?.label || p.status, p.due_date || '', p.paid_date || '', p.payment_method || '', p.reference || '']));
+      downloadCSV('pagos', ['Equipo', 'Concepto', 'Monto', 'Estado', 'Vencimiento', 'Pagado', 'Método', 'Referencia'],
+        state.payments.filter(p => inReportRange(p.paid_date || p.created_at)).map(p => [teamName(p.team_id), p.concept || '', p.amount,
+          PAYMENT_STATUS[p.status]?.label || p.status, p.due_date || '', p.paid_date || '', p.payment_method || '', p.reference || '']));
+
+    } else if (type === 'debtors') {
+      const saldo = pendingByTeam();
+      const rows = teams.map(t => ({ t, amount: saldo[t.id] || 0 })).filter(d => d.amount > 0).sort((a, b) => b.amount - a.amount);
+      downloadCSV('deudores', ['Equipo', 'Saldo pendiente', 'Teléfono', 'WhatsApp', 'Contacto', 'Email', 'Ciudad'],
+        rows.map(d => [d.t.name, d.amount, d.t.contact_phone || '', d.t.contact_phone ? `https://wa.me/52${d.t.contact_phone.replace(/\D/g, '')}` : '', d.t.contact_name || '', d.t.contact_email || '', d.t.origin_city || '']));
+
+    } else if (type === 'schedule') {
+      downloadCSV('programacion', ['Fecha', 'Hora', 'Equipo', 'Modalidad', 'Categoría edad', 'Bailarines', 'Nivel', 'Contacto', 'Teléfono'],
+        teams.filter(t => t.scheduled_time).sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time))
+          .map(t => { const d = new Date(t.scheduled_time); return [d.toLocaleDateString('es-MX'), d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }), t.name, catById(t.category_id)?.name || '', t.age_category || '', (state.dancersByTeam[t.id] || []).length, t.modalidad || '', t.contact_name || '', t.contact_phone || '']; }));
+
+    } else if (type === 'logistics') {
+      const C = teamChecks;
+      downloadCSV('logistica', ['Equipo', 'Logo', 'Música', 'Participantes', 'Modalidad', 'Categoría edad', 'Contacto', 'Horario', 'Pendientes'],
+        teams.map(t => { const c = C(t); return [t.name, ...c.map(x => x.ok ? 'OK' : 'FALTA'), c.filter(x => !x.ok).map(x => x.label).join(' / ') || '—']; }));
+
+    } else if (type === 'scores') {
+      downloadCSV('resultados', ['Puesto', 'Equipo', ...SCORE_CRITERIA.map(c => `${c.label} (${c.max})`), 'Total', 'Jueces'],
+        rankingForExport());
+    } else {
+      toast('Export desconocido', false);
     }
-    
-    if (!rows.length) { toast('Sin datos para exportar', false); return; }
-    
-    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `desert-dance-${type}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    toast('CSV exportado');
+  }
+
+  function rankingForExport() {
+    const porEquipo = {};
+    for (const s of state.scores) (porEquipo[s.team_id] ||= []).push(s);
+    return Object.entries(porEquipo).map(([tid, ss]) => ({ team: state.teams.find(t => t.id === tid), ss }))
+      .filter(r => r.team)
+      .map(r => {
+        const avg = k => r.ss.reduce((a, s) => a + (Number(s[k]) || 0), 0) / r.ss.length;
+        return { name: r.team.name, ss: r.ss.length, vals: SCORE_CRITERIA.map(c => avg(c.key).toFixed(1)), total: (r.ss.reduce((a, s) => a + scoreTotal(s), 0) / r.ss.length).toFixed(1) };
+      })
+      .sort((a, b) => Number(b.total) - Number(a.total))
+      .map((r, i) => [i + 1, r.name, ...r.vals, r.total, r.ss]);
   }
 
   // ============================================================

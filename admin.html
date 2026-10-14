@@ -57,6 +57,21 @@
     @media (prefers-reduced-motion: reduce) {
       .reveal, .stat-card, .toast { animation: none !important; }
     }
+    /* Resumen PDF: al imprimir solo sale #print-view, en blanco y negro. */
+    #print-view { display: none; }
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      body > *:not(#main-content), .no-print, #sidebar, #sidebar-overlay { display: none !important; }
+      #print-view { display: block !important; padding: 0; }
+      #print-view h1 { font-size: 20pt; font-weight: 800; margin: 0 0 4pt; }
+      #print-view h2 { font-size: 12pt; font-weight: 800; margin: 16pt 0 6pt; border-bottom: 1px solid #999; padding-bottom: 3pt; }
+      #print-view p { font-size: 9pt; color: #444; margin: 0 0 8pt; }
+      #print-view table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+      #print-view th, #print-view td { border: 1px solid #bbb; padding: 3pt 5pt; text-align: left; }
+      #print-view th { background: #eee; font-weight: 700; }
+      #print-view tr { page-break-inside: avoid; }
+      thead { display: table-header-group; }
+    }
   </style>
 </head>
 <body class="font-body antialiased">
